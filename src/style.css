@@ -1,0 +1,235 @@
+.div-wrapper {
+    background-color: #5aa1ce;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .div-wrapper .div {
+    background-color: #5aa1ce;
+    overflow: hidden;
+    width: 1728px;
+    height: 1117px;
+    position: relative;
+  }
+  
+  .div-wrapper .text-wrapper {@import url("https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css");
+    * {
+      -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      margin: 0px;
+      height: 100%;
+    }
+    button:focus-visible {
+      outline: 2px solid #4a90e2 !important;
+      outline: -webkit-focus-ring-color auto 5px !important;
+    }
+    a {
+      text-decoration: none;
+    }    
+    position: absolute;
+    width: 645px;
+    top: 1137px;
+    left: 57px;
+    font-family: "Kantumruy-Regular", Helvetica;
+    font-weight: 400;
+    color: #ffffff;
+    font-size: 20px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+  }
+  
+  .div-wrapper .overlap {
+    position: absolute;
+    width: 1674px;
+    height: 1117px;
+    top: 0;
+    left: 57px;
+  }
+  
+  .div-wrapper .view {
+    position: absolute;
+    width: 1518px;
+    height: 1117px;
+    top: 0;
+    left: 156px;
+  }
+  
+  .div-wrapper .overlap-group {
+    position: absolute;
+    width: 632px;
+    height: 1117px;
+    top: 0;
+    left: 882px;
+    background-color: #e1edf5;
+  }
+  
+  .div-wrapper .text-wrapper-2 {
+    position: absolute;
+    width: 185px;
+    top: 392px;
+    left: 42px;
+    font-family: "Lalezar-Regular", Helvetica;
+    font-weight: 400;
+    color: #000000;
+    font-size: 64px;
+    letter-spacing: 0;
+    line-height: normal;
+  }
+  
+  .div-wrapper .text-wrapper-3 {
+    position: absolute;
+    width: 870px;
+    top: 188px;
+    left: 0;
+    font-family: "Kavoon-Regular", Helvetica;
+    font-weight: 400;
+    color: #ffffff;
+    font-size: 64px;
+    letter-spacing: 0;
+    line-height: normal;
+  }
+  
+  .div-wrapper .view-2 {
+    position: absolute;
+    width: 519px;
+    height: 345px;
+    top: 520px;
+    left: 1099px;
+  }
+  
+  .div-wrapper .overlap-group-wrapper {
+    position: absolute;
+    width: 521px;
+    height: 93px;
+    top: 252px;
+    left: 0;
+  }
+  
+  .div-wrapper .overlap-group-2 {
+    position: relative;
+    width: 519px;
+    height: 93px;
+    background-color: #ffffff;
+    border-radius: 20px;
+    border: 1px solid;
+    border-color: #00000066;
+  }
+  
+  .div-wrapper .text-wrapper-4 {
+    width: 287px;
+    top: 26px;
+    left: 139px;
+    position: absolute;
+    font-family: "Fascinate-Regular", Helvetica;
+    font-weight: 400;
+    color: #000000;
+    font-size: 32px;
+    letter-spacing: 0;
+    line-height: normal;
+  }
+  
+  .div-wrapper .image {
+    position: absolute;
+    width: 44px;
+    height: 35px;
+    top: 28px;
+    left: 51px;
+  }
+  
+  .div-wrapper .overlap-wrapper {
+    position: absolute;
+    width: 521px;
+    height: 102px;
+    top: 131px;
+    left: 0;
+  }
+  
+  .div-wrapper .overlap-2 {
+    position: relative;
+    width: 519px;
+    height: 102px;
+  }
+  
+  .div-wrapper .view-3 {
+    position: absolute;
+    width: 519px;
+    height: 93px;
+    top: 0;
+    left: 0;
+    background-color: #ffffff;
+    border-radius: 20px;
+    border: 1px solid;
+    border-color: #00000066;
+  }
+  
+  .div-wrapper .text-wrapper-5 {
+    width: 358px;
+    top: 24px;
+    left: 141px;
+    position: absolute;
+    font-family: "Fascinate-Regular", Helvetica;
+    font-weight: 400;
+    color: #000000;
+    font-size: 32px;
+    letter-spacing: 0;
+    line-height: normal;
+  }
+  
+  .div-wrapper .img {
+    position: absolute;
+    width: 43px;
+    height: 41px;
+    top: 26px;
+    left: 53px;
+  }
+  
+  .div-wrapper .view-4 {
+    position: absolute;
+    width: 521px;
+    height: 93px;
+    top: 0;
+    left: 0;
+  }
+  
+  .div-wrapper .text-wrapper-6 {
+    width: 230px;
+    top: 25px;
+    left: 155px;
+    position: absolute;
+    font-family: "Fascinate-Regular", Helvetica;
+    font-weight: 400;
+    color: #000000;
+    font-size: 32px;
+    letter-spacing: 0;
+    line-height: normal;
+  }
+  
+  .div-wrapper .image-2 {
+    position: absolute;
+    width: 54px;
+    height: 45px;
+    top: 23px;
+    left: 47px;
+    object-fit: cover;
+  }
+  
+  .div-wrapper .p {
+    position: absolute;
+    width: 645px;
+    top: 1065px;
+    left: 0;
+    font-family: "Kantumruy-Regular", Helvetica;
+    font-weight: 400;
+    color: #ffffff;
+    font-size: 20px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+  }
+  
