@@ -105,34 +105,33 @@ const EditPage = () => {
             <p className="sub-report-korean-title text-lg text-gray-600">( 지 분 증 권 )</p>
           </div>
 
-          {/* 이 부분은 실제 보고서 데이터로 채워져야 하며, 편집 가능하지는 않을 것 (뷰어 역할) */}
-          <div className="form-details-section">
-            <div className="form-row flex justify-between items-baseline mb-5">
-              <div className="form-label font-semibold text-gray-700 min-w-[150px]">금융위원회 귀중</div>
-              <div className="date-display flex gap-4 text-gray-500 text-sm">
-                <span>2022년</span>
-                <span>08월</span>
-                <span>16일</span>
-              </div>
-            </div>
+                            <div className="form-details-section">
+                                <div className="form-row flex justify-between items-baseline mb-5">
+                                    <div className="form-label font-semibold text-gray-700 min-w-[150px]">금융위원회 귀중</div>
+                                    <div className="date-display flex gap-4 text-gray-500 text-sm">
+                                        <span>2022년</span>
+                                        <span>08월</span>
+                                        <span>16일</span>
+                                    </div>
+                                </div>
 
-            <div className="form-row flex mb-5">
-              <div className="form-label font-semibold text-gray-700 min-w-[150px]">회 사 명:</div>
-              <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
-            </div>
-            <div className="form-row flex mb-5">
-              <div className="form-label font-semibold text-gray-700 min-w-[150px]">대 표 이 사:</div>
-              <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
-            </div>
-            <div className="form-row flex mb-5">
-              <div className="form-label font-semibold text-gray-700 min-w-[150px]">본 점 소 재 지:</div>
-              <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
-            </div>
+                                <div className="form-row flex mb-5">
+                                    <div className="form-label font-semibold text-gray-700 min-w-[150px]">회 사 명:</div>
+                                    <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
+                                </div>
+                                <div className="form-row flex mb-5">
+                                    <div className="form-label font-semibold text-gray-700 min-w-[150px]">대 표 이 사:</div>
+                                    <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
+                                </div>
+                                <div className="form-row flex mb-5">
+                                    <div className="form-label font-semibold text-gray-700 min-w-[150px]">본 점 소 재 지:</div>
+                                    <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
+                                </div>
 
-            <div className="form-row flex mt-10 mb-5">
-              <div className="form-label font-semibold text-gray-700 min-w-[150px]">작 성 책 임 자:</div>
-              <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
-            </div>
+                                <div className="form-row flex mt-10 mb-5">
+                                    <div className="form-label font-semibold text-gray-700 min-w-[150px]">작 성 책 임 자:</div>
+                                    <div className="form-input-placeholder flex-grow border-b border-gray-300 h-6"></div>
+                                </div>
 
             <div className="form-row flex mt-10">
               <div className="form-label font-semibold text-gray-700 min-w-[150px]">모집 또는 매출 증권의 종류 및 수:</div>

@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ show, onClose, onChatbotClick }) => {
         </div>
         <div className="sidebar flex flex-col justify-between h-full">
             <div className="sidebar-message">
-                <p>필요한 자료들을 불러오는 중입니다......</p>
+                <p>히스토리 출력하는 페이지입니다......</p>
                 <p>모두 준비되었습니다!</p>
                 <p>원하시는 신고서를 선택해주세요!</p>
             </div>
