@@ -14,7 +14,7 @@ const OAuthSuccessPage = () => {
         // 백엔드의 새로운 토큰 발급 엔드포인트로 요청
         // 이 요청은 서버가 Refresh Token 쿠키를 읽고 Access Token을 발급함함.
         // Spring Security가 자동으로 쿠키를 보내주어 별도의 설정x
-        const response = await axios.get('/auth/oauth/success'); 
+        const response = await axios.get('/auth/oauth/tokens');
         const { accessToken } = response.data; 
 
         if (accessToken) {
