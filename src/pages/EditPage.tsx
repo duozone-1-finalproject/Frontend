@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios'; 
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 const EditPage = () => {
   const navigate = useNavigate();
-  const [sidebar,setSidebar]= useState<boolean>(false);
+  const [sidebar,setSidebar]= useState<boolean>(true);
 
   return (
     // 가장 바깥쪽 컨테이너: 화면 전체를 채우도록 설정 (h-screen, w-screen)

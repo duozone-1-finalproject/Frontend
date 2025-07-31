@@ -22,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ show, onClose, onChatbotClick }) => {
     //일반정렬(비트윈 정렬)
 
     if (toggle==="chatbot") return (
-    <div className="sidebar flex flex-col justify-between h-full bg-gray-800 text-white p-4" style={{ flexBasis: '250px', flexShrink: 0 }}>
+    <div className="Sidebar flex flex-col justify-between h-full bg-gray-800 text-white p-4" style={{ flexBasis: '250px', flexShrink: 0 }}>
         <div className="flex flex-col">
             <button onClick={handleTogleOnClick}>
                 {toggle === "chatbot" ? "history" : "chatbot"}
