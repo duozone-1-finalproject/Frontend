@@ -37,7 +37,7 @@ const EditPage = () => {
                     {/* 상단 헤더 바: X, 증권신고서 제목, 현재버전 셀렉트, 수정하기 버튼 */}
                     {/* flex-none: 이 헤더의 높이가 내용에 따라 고정되도록 하여 flex-grow가 적용된 아래 컨텐츠 영역이 나머지 공간을 채우도록 함 */}
                     <div className="header-top-bar flex-none flex items-center justify-between p-4 border-b border-gray-200">
-                        <span className="close-icon text-gray-400 text-xl font-bold cursor-pointer">X</span>
+                        <span className="close-icon text-gray-400 text-xl font-bold cursor-pointer" onClick={()=>setSidebar(!sidebar)}>☰</span>
                         {/* 이미지와 같이 '증권신고서' 제목이 중앙에 가깝도록 flex-grow를 사용하여 양옆의 여백을 조절하거나,
                             단순히 flex-grow를 주지 않고 content의 자연스러운 중앙 정렬을 이용할 수도 있습니다.
                             여기서는 `mr-auto ml-auto` 조합으로 중앙 정렬하고 텍스트 정렬을 명시합니다. */}
