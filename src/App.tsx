@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import MainPage from "./pages/MainPage";
 import RegisterPage from "./pages/RegisterPage";
 import OAuthSuccessPage from './pages/OAuthSuccessPage';
+import EditPage from "./pages/EditPage";
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
         <Route path="/main" element={<MainPage />} />
         <Route path="/Register" element={<RegisterPage />} />
         <Route path="/oauth-success" element={<OAuthSuccessPage />} />
+        <Route path="/edit" element={<EditPage />} />
       </Routes>
     </Router>
   );
