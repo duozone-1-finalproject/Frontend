@@ -125,4 +125,8 @@ tree명령어와 gpt 이용하면 쓸만하게 나옴
 >!manual.txt
 
 ---
+#
+## TipTap install 
+#npm install @tiptap/react @tiptap/core @tiptap/starter-kit @tiptap/extension-heading @tiptap/extension-paragraph @tiptap/extension-text
 
+#npm install @tiptap/extension-bold @tiptap/extension-italic @tiptap/extension-link @tiptap/extension-list-item @tiptap/extension-bullet-list @tiptap/extension-ordered-list @tiptap/extension-blockquote @tiptap/extension-code-block @tiptap/extension-hard-break @tiptap/extension-horizontal-rule @tiptap/extension-image @tiptap/extension-table @tiptap/extension-table-cell @tiptap/extension-table-header @tiptap/extension-table-row
