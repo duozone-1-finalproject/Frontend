@@ -91,53 +91,13 @@ const EditPage = () => {
     setReportHtmlContent(html);
   }, []);
 
-  // 키보드 단축키 (Ctrl+S로 저장)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        saveReport();
-      }
-    };
+  useEffect(() => {
+    setReportId(999);
+  }, []);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [saveReport]);
-
-  // 자동 저장 기능 (30초마다)
-  useEffect(() => {
-    if (reportHtmlContent && reportId) {
-      const autoSaveTimer = setTimeout(() => {
-        console.log("자동 저장 시도...");
-        // 자동 저장이 필요하다면 여기서 saveReport() 호출
-      }, 30000);
-
-      return () => clearTimeout(autoSaveTimer);
-    }
-  }, [reportHtmlContent, reportId]);
-
-  // 페이지 로드 시 초기화
-  useEffect(() => {
-    setReportId(999);
-    // fetchReport(999); // 실제 백엔드 연결 시 활성화
-  }, []);
-
-  // 페이지 이탈 시 저장 확인
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!lastSaved || (new Date().getTime() - lastSaved.getTime()) > 60000) {
-        e.preventDefault();
-        e.returnValue = '변경사항이 저장되지 않았습니다. 정말 페이지를 나가시겠습니까?';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [lastSaved]);
-
-  return (
-    <div className="security-report-container h-screen w-screen flex bg-gradient-to-b from-blue-200 to-blue-100">
-      <Sidebar show={showSidebar} onClose={() => setShowSidebar(false)} />
+  return (
+    <div className="security-report-container h-screen w-screen flex bg-gradient-to-b from-blue-200 to-blue-100">
+      <Sidebar show={showSidebar} onClose={() => setShowSidebar(false)} />
 
       <div className="main-content flex flex-grow h-full max-w-full rounded-lg shadow-lg overflow-hidden bg-white">
         {/* 좌측 (보고서 뷰어 / 폼 영역) */}
