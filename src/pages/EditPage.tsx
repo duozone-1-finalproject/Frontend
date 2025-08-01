@@ -30,10 +30,10 @@ const EditPage = () => {
                     실제 폼과 우측 빈 공간을 감싸는 래퍼 div (이미지에서 보이는 흰색 박스):
                     - flex flex-col: 상단 헤더와 하단 폼 영역을 세로로 배치합니다.
                     - w-full h-full: main-content 내에서 사용 가능한 공간을 최대한 채웁니다.
-                    - max-w-[80vw]: 폼 영역 전체의 최대 가로 크기를 뷰포트 너비의 80%로 제한합니다.
+                    - max-w-[70vw]: 폼 영역 전체의 최대 가로 크기를 뷰포트 너비의 70%로 제한합니다.
                     - bg-white rounded-lg shadow-lg: 전체 폼 영역에 흰색 배경, 둥근 모서리, 그림자를 적용.
                 */}
-                <div className={`flex flex-col w-full h-full ${sidebar? "max-w-80vw":"max-w-vw"} bg-white rounded-lg shadow-lg`}>
+                <div className={`flex flex-col w-full h-full ${sidebar? "max-w-70vw":"max-w-vw"} bg-white rounded-lg shadow-lg`}>
                     {/* 상단 헤더 바: X, 증권신고서 제목, 현재버전 셀렉트, 수정하기 버튼 */}
                     {/* flex-none: 이 헤더의 높이가 내용에 따라 고정되도록 하여 flex-grow가 적용된 아래 컨텐츠 영역이 나머지 공간을 채우도록 함 */}
                     <div className="header-top-bar flex-none flex items-center justify-between p-4 border-b border-gray-200">
