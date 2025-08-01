@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ClockIcon, ChatBubbleBottomCenterTextIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'; // 또는 /24/solid
 
+import History from './sidebar/History';
+import Chatbot from './sidebar/Chatbot';
 interface SidebarProps {
   show: boolean;
   onClose?: () => void;
@@ -14,52 +16,6 @@ const Sidebar: React.FC<SidebarProps> = ({ show, onClose, onChatbotClick }) => {
 
     const handleTogleOnClick= (value:string)=>{
         setToggle(value);
-    }
-
-    const Chatbot=()=>{
-        return(
-            <div className="sidebar flex flex-col justify-between h-full">
-            <div className="sidebar-message">
-                <div className="sidebar-message-content flex justify-end mt-2 mb-3">  
-                    <div className="sidebar-message-content-item bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs">
-                        내가 입력한 채팅
-                    </div>
-                </div>
-                <div className="sidebar-message-content flex justify-start mt-2 mb-3">  
-                    <div className="sidebar-message-content-item bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs">
-                        챗봇이 입력한 
-                    </div>
-                </div>
-                <div className="sidebar-message-content flex justify-start mt-2 mb-3">  
-                    <div className="sidebar-message-content-item bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs">
-                        챗봇이 입력한 
-                    </div>
-                </div>
-            </div>
-            <div className="sidebar-input mt-auto "> {/* mt-auto로 아래로 밀어내기 */}
-                <input type="text" placeholder="무엇이든 물어보세요." className="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white placeholder-gray-400" />
-            </div>
-        </div>
-        ); 
-    }
-
-    const History=()=>{
-        return(
-            <div className="sidebar flex flex-col h-full">
-                <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                    <p>Q. 질문요약</p>
-                    <p>A. 질문답변</p>
-                </div>
-                <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                    <p>Q. 질문요약</p>
-                    <p>A. 질문답변</p>
-                </div>
-                <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                    <p>Q. 질문요약</p>
-                    <p>A. 질문답변</p>
-                </div>
-            </div>
-        );
     }
     
     if (!show) return null;
