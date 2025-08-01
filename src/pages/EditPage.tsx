@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
-import Sidebar from '../components/sidebar'; // Sidebar 컴포넌트 임포트
+import Sidebar from '../components/Sidebar'; // Sidebar 컴포넌트 임포트
 import TextEditor from '../components/TextEditor'; // TextEditor 컴포넌트 임포트 (새로 만든 파일)
 
 const EditPage = () => {
