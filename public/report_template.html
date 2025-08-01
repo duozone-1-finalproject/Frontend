@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>증권신고서</title>
+  <style>
+    body { font-family: 'Malgun Gothic', sans-serif; padding: 30px; line-height: 1.8; }
+    .title { text-align: center; font-size: 24px; font-weight: bold; }
+    .subtitle { text-align: center; font-size: 18px; }
+    .field { margin-top: 20px; }
+    .label { display: inline-block; width: 150px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="title">증 권 신 고 서</div>
+  <div class="subtitle">(지분증권, 채무증권, 증권예탁증권, 투자계약증권)</div>
+
+  <div class="field">금융위원회 귀중 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    {{ year }}년 {{ month }}월 {{ day }}일</div>
+
+  <div class="field"><span class="label">회사명:</span> {{ company_name }}</div>
+  <div class="field"><span class="label">대표이사:</span> {{ ceo_name }}</div>
+  <div class="field"><span class="label">본점소재지:</span> {{ address }}
+    (전화: {{ phone }}) (홈페이지: <a href="{{ homepage }}">{{ homepage }}</a>)</div>
+
+  <div class="field"><span class="label">작성책임자:</span>
+    (직책: {{ writer_position }}) (성명: {{ writer_name }}) (전화: {{ writer_phone }})</div>
+
+  <div class="field"><span class="label">증권 종류 및 수:</span> {{ stock_type }}</div>
+  <div class="field"><span class="label">모집 또는 매출총액:</span> {{ total_amount }}</div>
+
+  <div class="field"><strong>증권신고서 및 투자설명서 열람장소</strong></div>
+  <div class="field">가. 증권신고서<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;전자문서: 금융위(금감원) 전자공시시스템 →
+    <a href="http://dart.fss.or.kr">http://dart.fss.or.kr</a>
+  </div>
+  <div class="field">나. 투자설명서<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;전자문서: 금융위(금감원) 전자공시시스템 →
+    <a href="http://dart.fss.or.kr">http://dart.fss.or.kr</a><br />
+    &nbsp;&nbsp;&nbsp;&nbsp;서면문서:
+  </div>
+  <div class="field"><strong>최근 3개년 재무정보</strong></div>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>연도</th>
+        <th>매출액</th>
+        <th>영업이익</th>
+        <th>당기순이익</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in financial_data %}
+      <tr>
+        <td>{{ row.year }}</td>
+        <td>{{ row.revenue }}</td>
+        <td>{{ row.operating_income }}</td>
+        <td>{{ row.net_income }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
