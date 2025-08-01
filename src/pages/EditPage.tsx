@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 import TextEditor from '../components/TextEditor';
 
 const EditPage = () => {
