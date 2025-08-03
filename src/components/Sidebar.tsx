@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ClockIcon, ChatBubbleBottomCenterTextIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'; // 또는 /24/solid
+import {ChatProvider} from '../context/chatContext/ChatContext';
 
 import History from './sidebar/History';
 import Chatbot from './sidebar/Chatbot';
@@ -32,7 +33,10 @@ const Sidebar: React.FC<SidebarProps> = ({ show, onClose, onChatbotClick }) => {
             </button>
         </div>
         <hr className="h-2 my-4 border-gray-700 border-t-4" />
-        {toggle==="chatbot" ? <Chatbot/> : <History/>}
+        <ChatProvider>
+            {toggle==="chatbot" ? <Chatbot/> : <History/>}
+        </ChatProvider>
+        
         
         
     </div>

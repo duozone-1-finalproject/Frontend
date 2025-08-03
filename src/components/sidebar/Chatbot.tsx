@@ -1,28 +1,22 @@
 import React, { useState } from 'react';
 import ChatInput from './ChatInput';
-
-interface Message {
-  role: 'user' | 'bot';
-  content: string;
-}
+import {useChat} from '../../context/chatContext/ChatContext';
 
 const Chatbot = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'user', content: '안녕 챗봇아!' },
-    { role: 'bot', content: '' },
-    { role: 'user', content: '오늘 날씨 어때?' },
-    { role: 'bot', content: '오늘은 맑고 기온은 28도입니다.' },
-  ]);
+  const {messages, addMessage} = useChat();
+
+
+
 
   const handleSend = (msg: string) => {
     console.log('전송된 메시지:', msg);
 
     // 새 메시지를 추가
-    setMessages((prev) => [...prev, { role: 'user', content: msg }]);
+    addMessage({ role: 'user', content: msg });
 
     // 챗봇 응답 더미
     setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'bot', content: '알겠습니다. 조금만 기다려 주세요.' }]);
+      addMessage({ role: 'bot', content: '알겠습니다. 조금만 기다려 주세요.' });
     }, 1000);
   };
 

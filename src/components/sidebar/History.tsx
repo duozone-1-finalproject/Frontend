@@ -1,21 +1,26 @@
 import React from 'react';
-const History=()=>{
+import { useChat } from '../../context/chatContext/ChatContext';
 
-    return(
-        <div className="sidebar flex flex-col h-full">
-            <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                <p>Q. 질문요약</p>
-                <p>A. 질문답변</p>
-            </div>
-            <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                <p>A. 질문답변</p>
-                <p>Q. 질문요약</p>
-            </div>
-            <div className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs mb-2">
-                <p>Q. 질문요약</p>
-                <p>A. 질문답변</p>
-            </div>
+const History = () => {
+  const { messages } = useChat();
+
+  return (
+    <div className="sidebar flex flex-col h-full p-4 space-y-2 overflow-y-auto">
+      {messages.map((msg, index) => (
+        <div
+          key={index}
+          className="history-log bg-gray-300 text-gray-800 p-3 rounded-lg max-w-xs"
+        >
+          {msg.role === 'user' && (
+            <p><strong>Q.</strong> {msg.content}</p>
+          )}
+          {msg.role === 'bot' && (
+            <p><strong>A.</strong> {msg.content}</p>
+          )}
         </div>
-    );
-}
+      ))}
+    </div>
+  );
+};
+
 export default History;
