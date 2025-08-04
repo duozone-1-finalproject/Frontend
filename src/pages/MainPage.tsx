@@ -237,7 +237,7 @@ const MainPage = () => {
                 ${textColor}
                 ${hoverBgColor}
               `}
-              onClick={handleEditClick}
+              onClick={handleChatbotClick}
             >
               {text}
             </button>
