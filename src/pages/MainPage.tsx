@@ -64,6 +64,11 @@ const MainPage = () => {
     setShowSideBar(false); 
   };
 
+  const handleEditClick = () => {
+    navigate("/edit");
+    setShowSideBar(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white overflow-hidden">
       {/* 상단 네비게이션 */}
@@ -232,6 +237,7 @@ const MainPage = () => {
                 ${textColor}
                 ${hoverBgColor}
               `}
+              onClick={handleEditClick}
             >
               {text}
             </button>
