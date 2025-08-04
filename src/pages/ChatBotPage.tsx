@@ -15,9 +15,10 @@ import { TableCell } from "@tiptap/extension-table-cell"
 import { ChatInterface } from "../components/chatbotpage/ChatInterface"
 import { DocumentEditor } from "../components/chatbotpage/DocumentEditor"
 import { getInitialDocumentHTML, getStreamingContent } from "../utils/documentUtils"
-import type { Message, Mode } from "../types/index"
+import { createNewVersion, saveVersionsToStorage, loadVersionsFromStorage } from "../utils/versionUtils"
+import type { Message, Mode, DocumentVersion } from "../types"
 
-export default function ChatBotPage() {
+export default function SecuritiesDocumentCreator() {
   // State
   const [mode, setMode] = useState<Mode>("chat")
   const [messages, setMessages] = useState<Message[]>([
@@ -34,6 +35,12 @@ export default function ChatBotPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [documentContent, setDocumentContent] = useState("")
 
+  // Version Management State
+  const [versions, setVersions] = useState<DocumentVersion[]>([])
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [lastSavedContent, setLastSavedContent] = useState("")
+
   // Tiptap Editor
   const editor = useEditor({
     extensions: [
@@ -49,23 +56,46 @@ export default function ChatBotPage() {
     ],
     content: "",
     editable: isEditing,
+    onUpdate: ({ editor }) => {
+      const currentContent = editor.getHTML()
+      setHasUnsavedChanges(currentContent !== lastSavedContent)
+    },
   })
+
+  // Load versions from localStorage on mount
+  useEffect(() => {
+    const savedVersions = loadVersionsFromStorage()
+    setVersions(savedVersions)
+
+    // Set the latest version as current if exists
+    if (savedVersions.length > 0) {
+      const latestVersion = savedVersions.reduce((latest, current) =>
+        current.version > latest.version ? current : latest,
+      )
+      setCurrentVersionId(latestVersion.id)
+      setDocumentContent(latestVersion.content)
+      setLastSavedContent(latestVersion.content)
+    }
+  }, [])
+
+  // Save versions to localStorage whenever versions change
+  useEffect(() => {
+    if (versions.length > 0) {
+      saveVersionsToStorage(versions)
+    }
+  }, [versions])
 
   // Effects
   useEffect(() => {
     if (editor) {
       editor.setEditable(isEditing)
-      if (isEditing && documentContent) {
-        editor.commands.setContent(documentContent)
-      }
     }
   }, [isEditing, editor])
 
+  // Check for unsaved changes when document content changes
   useEffect(() => {
-    if (editor && isEditing && documentContent) {
-      editor.commands.setContent(documentContent)
-    }
-  }, [editor, isEditing, documentContent])
+    setHasUnsavedChanges(documentContent !== lastSavedContent)
+  }, [documentContent, lastSavedContent])
 
   // Handlers
   const handleSendMessage = async () => {
@@ -122,12 +152,19 @@ export default function ChatBotPage() {
         setIsStreaming(false)
         const initialContent = getInitialDocumentHTML()
         setDocumentContent(initialContent)
-        if (editor) {
-          editor.commands.setContent(initialContent)
+
+        // Create first version automatically
+        if (versions.length === 0) {
+          const firstVersion = createNewVersion(initialContent, versions, "초기 증권신고서", "AI가 생성한 초기 문서")
+          setVersions([firstVersion])
+          setCurrentVersionId(firstVersion.id)
+          setLastSavedContent(initialContent)
+          setHasUnsavedChanges(false)
         }
+
         clearInterval(streamInterval)
       }
-    }, 30)
+    }, 20)
   }
 
   const handleBackToChat = () => {
@@ -138,13 +175,59 @@ export default function ChatBotPage() {
 
   const handleToggleEdit = () => {
     if (isEditing && editor) {
-      setDocumentContent(editor.getHTML())
+      // 편집 완료 시: 자동으로 새 버전 생성
+      const currentHTML = editor.getHTML()
+      console.log("Saving editor content:", currentHTML)
+
+      // 내용이 변경되었을 때만 새 버전 생성
+      if (currentHTML !== lastSavedContent) {
+        const newVersion = createNewVersion(
+          currentHTML,
+          versions,
+          `증권신고서 v${versions.length + 1}`,
+          `버전 ${versions.length + 1} - ${new Date().toLocaleString("ko-KR")}`,
+        )
+
+        setVersions((prev) => [...prev, newVersion])
+        setCurrentVersionId(newVersion.id)
+        setLastSavedContent(currentHTML)
+        setHasUnsavedChanges(false)
+
+        console.log("New version created automatically:", newVersion)
+      }
+
+      // 에디터 내용을 문서 내용으로 설정
+      setDocumentContent(currentHTML)
     } else {
-      if (editor && documentContent) {
-        editor.commands.setContent(documentContent)
+      // 편집 시작 시: 현재 문서 내용을 에디터에 로드
+      if (editor) {
+        const contentToEdit = documentContent || getInitialDocumentHTML()
+        console.log("Loading content to editor:", contentToEdit)
+        editor.commands.setContent(contentToEdit)
+        setLastSavedContent(contentToEdit)
       }
     }
     setIsEditing(!isEditing)
+  }
+
+  // Version Management Handlers
+  const handleVersionSelect = (version: DocumentVersion) => {
+    if (hasUnsavedChanges) {
+      const confirmSwitch = window.confirm("저장되지 않은 변경사항이 있습니다. 다른 버전으로 이동하시겠습니까?")
+      if (!confirmSwitch) return
+    }
+
+    setCurrentVersionId(version.id)
+    setDocumentContent(version.content)
+    setLastSavedContent(version.content)
+    setHasUnsavedChanges(false)
+
+    // 편집 모드였다면 에디터 내용도 업데이트
+    if (isEditing && editor) {
+      editor.commands.setContent(version.content)
+    }
+
+    console.log("Switched to version:", version.version)
   }
 
   // Render
@@ -172,6 +255,10 @@ export default function ChatBotPage() {
       streamedContent={streamedContent}
       documentContent={documentContent}
       editor={editor}
+      versions={versions}
+      currentVersionId={currentVersionId}
+      onVersionSelect={handleVersionSelect}
+      hasUnsavedChanges={hasUnsavedChanges}
     />
   )
 }

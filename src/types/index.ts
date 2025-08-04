@@ -12,4 +12,13 @@ export interface DocumentField {
   placeholder: string
 }
 
+export interface DocumentVersion {
+  id: string
+  version: number
+  content: string
+  title: string
+  createdAt: Date
+  description?: string
+}
+
 export type Mode = "chat" | "document"

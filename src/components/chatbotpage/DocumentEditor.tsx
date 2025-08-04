@@ -5,7 +5,8 @@ import { ArrowLeft, Edit3 } from "lucide-react"
 import { ChatSidebar } from "./ChatSidebar"
 import { DocumentContent } from "./DocumentContent"
 import { SaveDropdown } from "./SaveDropdown"
-import type { Message } from "../../types/index"
+import { VersionSelector } from "./VersionSelector"
+import type { Message, DocumentVersion } from "../../types"
 import type { Editor } from "@tiptap/react"
 
 interface DocumentEditorProps {
@@ -20,6 +21,10 @@ interface DocumentEditorProps {
   streamedContent: string
   documentContent: string
   editor: Editor | null
+  versions: DocumentVersion[]
+  currentVersionId: string | null
+  onVersionSelect: (version: DocumentVersion) => void
+  hasUnsavedChanges: boolean
 }
 
 export function DocumentEditor({
@@ -34,6 +39,10 @@ export function DocumentEditor({
   streamedContent,
   documentContent,
   editor,
+  versions,
+  currentVersionId,
+  onVersionSelect,
+  hasUnsavedChanges,
 }: DocumentEditorProps) {
   return (
     <div className="flex h-screen bg-gray-50">
@@ -54,13 +63,25 @@ export function DocumentEditor({
               <ArrowLeft className="w-4 h-4" />
               <span>돌아가기</span>
             </Button>
-            <h1 className="text-2xl font-bold text-center">증권신고서 자동 생성</h1>
+            <h1 className="text-lg font-medium">보고서 내용 편집</h1>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {/* Version Selector */}
+            <VersionSelector
+              versions={versions}
+              currentVersionId={currentVersionId}
+              onVersionSelect={onVersionSelect}
+              hasUnsavedChanges={hasUnsavedChanges}
+            />
+
+            {/* Save Dropdown - only show when not editing */}
             {!isEditing && <SaveDropdown documentContent={documentContent} />}
+
+            {/* Edit Toggle Button */}
             <Button onClick={onToggleEdit} variant="outline" className="flex items-center space-x-2 bg-transparent">
               <Edit3 className="w-4 h-4" />
               <span>{isEditing ? "편집 완료" : "편집하기"}</span>
+              {isEditing && hasUnsavedChanges && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
             </Button>
           </div>
         </div>
@@ -69,6 +90,7 @@ export function DocumentEditor({
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto p-8">
             <div className="bg-white">
+              <h1 className="text-2xl font-bold text-center mb-8">증권신고서 자동 생성</h1>
               <DocumentContent
                 isEditing={isEditing}
                 isStreaming={isStreaming}
