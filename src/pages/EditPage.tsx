@@ -1,7 +1,7 @@
 // src/pages/EditPage.tsx (에러 수정 버전)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 import TextEditor from '../components/TextEditor';
 
 const EditPage = () => {
