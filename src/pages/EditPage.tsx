@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios'; 
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 const EditPage = () => {
   const navigate = useNavigate();
