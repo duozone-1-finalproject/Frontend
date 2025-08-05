@@ -1,279 +1,102 @@
 "use client"
 
 import { Button } from "../ui/button"
-import { Separator } from "../ui/separator"
-import {
-  Bold,
-  Italic,
-  Undo,
-  Redo,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  TableIcon,
-  Plus,
-  Minus,
-} from "lucide-react"
-import type { Editor } from "@tiptap/react"
+import { Bold, Italic, AlignLeft, AlignCenter, AlignRight, Table, Undo, Redo } from "lucide-react"
 
 interface EditorToolbarProps {
-  editor: Editor | null
-  documentContent: string
+  fontSize: string
+  textColor: string
+  onApplyStyle: (command: string, value?: string) => void
+  onApplyAlignment: (align: string) => void
+  onApplyFontSize: (size: string) => void
+  onApplyTextColor: (color: string) => void
+  onUndo: () => void
+  onRedo: () => void
 }
 
-export function EditorToolbar({ editor, documentContent }: EditorToolbarProps) {
-  if (!editor) return null
-
+export default function EditorToolbar({
+  fontSize,
+  textColor,
+  onApplyStyle,
+  onApplyAlignment,
+  onApplyFontSize,
+  onApplyTextColor,
+  onUndo,
+  onRedo,
+}: EditorToolbarProps) {
   return (
-    <div className="border-b border-gray-200 p-2 flex items-center gap-1 flex-wrap bg-gray-50">
-      {/* Save Dropdown */}
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Undo/Redo */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
-        className="h-8 w-8 p-0"
-      >
-        <Undo className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
-        className="h-8 w-8 p-0"
-      >
-        <Redo className="h-4 w-4" />
-      </Button>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Text Formatting */}
-      <Button
-        variant={editor.isActive("bold") ? "default" : "ghost"}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive("italic") ? "default" : "ghost"}
-        size="sm"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        className="h-8 w-8 p-0"
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Text Alignment */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-600">정렬:</span>
-        <Button
-          variant={editor.isActive({ textAlign: "left" }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          className="h-8 w-8 p-0"
-        >
-          <AlignLeft className="h-4 w-4" />
+    <>
+      <div className="mb-4 p-2 bg-gray-100 border border-gray-300 rounded-lg flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => onApplyStyle("bold")} variant="outline">
+          <Bold className="w-4 h-4" />
         </Button>
-        <Button
-          variant={editor.isActive({ textAlign: "center" }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          className="h-8 w-8 p-0"
-        >
-          <AlignCenter className="h-4 w-4" />
+        <Button size="sm" onClick={() => onApplyStyle("italic")} variant="outline">
+          <Italic className="w-4 h-4" />
         </Button>
-        <Button
-          variant={editor.isActive({ textAlign: "right" }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          className="h-8 w-8 p-0"
-        >
-          <AlignRight className="h-4 w-4" />
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <Button size="sm" onClick={() => onApplyAlignment("left")} variant="outline">
+          <AlignLeft className="w-4 h-4" />
         </Button>
-        <Button
-          variant={editor.isActive({ textAlign: "justify" }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-          className="h-8 w-8 p-0"
+        <Button size="sm" onClick={() => onApplyAlignment("center")} variant="outline">
+          <AlignCenter className="w-4 h-4" />
+        </Button>
+        <Button size="sm" onClick={() => onApplyAlignment("right")} variant="outline">
+          <AlignRight className="w-4 h-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        {/* 폰트 사이즈 셀렉트 박스만 */}
+        <select
+          value={fontSize}
+          onChange={(e) => onApplyFontSize(e.target.value)}
+          className="h-8 px-2 border border-gray-300 rounded bg-white text-sm min-w-[70px]"
         >
-          <AlignJustify className="h-4 w-4" />
+          <option value="8px">8px</option>
+          <option value="9px">9px</option>
+          <option value="10px">10px</option>
+          <option value="11px">11px</option>
+          <option value="12px">12px</option>
+          <option value="14px">14px</option>
+          <option value="16px">16px</option>
+          <option value="18px">18px</option>
+          <option value="20px">20px</option>
+          <option value="22px">22px</option>
+          <option value="24px">24px</option>
+          <option value="28px">28px</option>
+          <option value="32px">32px</option>
+          <option value="36px">36px</option>
+          <option value="48px">48px</option>
+          <option value="72px">72px</option>
+        </select>
+
+        <input
+          type="color"
+          value={textColor}
+          onChange={(e) => onApplyTextColor(e.target.value)}
+          className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+          title="텍스트 색상"
+        />
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <Button size="sm" onClick={onUndo} variant="outline" disabled={!document.queryCommandEnabled("undo")}>
+          <Undo className="w-4 h-4" />
+        </Button>
+        <Button size="sm" onClick={onRedo} variant="outline" disabled={!document.queryCommandEnabled("redo")}>
+          <Redo className="w-4 h-4" />
         </Button>
       </div>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Table Controls */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-600">표:</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-          className="h-8 w-8 p-0"
-          title="표 삽입 (3x3)"
-        >
-          <TableIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().addColumnBefore().run()}
-          disabled={!editor.can().addColumnBefore()}
-          className="h-8 w-8 p-0"
-          title="열 추가"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().deleteColumn().run()}
-          disabled={!editor.can().deleteColumn()}
-          className="h-8 w-8 p-0"
-          title="열 삭제"
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().addRowBefore().run()}
-          disabled={!editor.can().addRowBefore()}
-          className="h-8 px-2 text-xs"
-          title="행 추가"
-        >
-          +행
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().deleteRow().run()}
-          disabled={!editor.can().deleteRow()}
-          className="h-8 px-2 text-xs"
-          title="행 삭제"
-        >
-          -행
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().deleteTable().run()}
-          disabled={!editor.can().deleteTable()}
-          className="h-8 px-2 text-xs"
-          title="표 삭제"
-        >
-          표삭제
-        </Button>
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-700">
+          💡 편집 모드: 문서의 텍스트를 선택한 뒤 위 도구를 사용해 서식을 적용하거나 테이블을 삽입하세요. 언도/리두로
+          편집 취소/재수행 가능.
+        </p>
       </div>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Text Colors */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-600">색상:</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setColor("#000000").run()}
-          className="h-6 w-6 p-0 bg-black"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setColor("#dc2626").run()}
-          className="h-6 w-6 p-0 bg-red-600"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setColor("#2563eb").run()}
-          className="h-6 w-6 p-0 bg-blue-600"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setColor("#16a34a").run()}
-          className="h-6 w-6 p-0 bg-green-600"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().setColor("#ca8a04").run()}
-          className="h-6 w-6 p-0 bg-yellow-600"
-        />
-      </div>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Highlight Colors */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-600">하이라이트:</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHighlight({ color: "#fef3c7" }).run()}
-          className="h-6 w-6 p-0 bg-yellow-200"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHighlight({ color: "#fecaca" }).run()}
-          className="h-6 w-6 p-0 bg-red-200"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHighlight({ color: "#bfdbfe" }).run()}
-          className="h-6 w-6 p-0 bg-blue-200"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().unsetHighlight().run()}
-          className="h-6 w-6 p-0 border border-gray-300"
-        >
-          <span className="text-xs">×</span>
-        </Button>
-      </div>
-
-      <Separator orientation="vertical" className="h-6 mx-1" />
-
-      {/* Headings */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant={editor.isActive("heading", { level: 1 }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className="h-8 px-2 text-xs"
-        >
-          H1
-        </Button>
-        <Button
-          variant={editor.isActive("heading", { level: 2 }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className="h-8 px-2 text-xs"
-        >
-          H2
-        </Button>
-        <Button
-          variant={editor.isActive("heading", { level: 3 }) ? "default" : "ghost"}
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className="h-8 px-2 text-xs"
-        >
-          H3
-        </Button>
-      </div>
-    </div>
+    </>
   )
 }
