@@ -40,6 +40,29 @@ const MainPage = () => {
     checkTokenAndFetchUser();
   }, [navigate]);
 
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    try {
+      // 백엔드 로그아웃 API 호출
+      await axios.post('/logout', {}, {
+        withCredentials: true, // 쿠키 포함
+      });
+      
+      // 클라이언트 측 토큰 제거
+      localStorage.removeItem('accessToken');
+      
+      console.log('✅ 로그아웃 성공');
+      
+      // 로그인 페이지로 리다이렉트
+      navigate('/');
+    } catch (error) {
+      console.error('❌ 로그아웃 실패:', error);
+      // 에러가 발생해도 클라이언트 측 정리는 진행
+      localStorage.removeItem('accessToken');
+      navigate('/');
+    }
+  };
+
   // 프로필 아이콘 클릭 핸들러 (마이페이지 바 토글)
   const handleProfileClick = () => {
     setShowMyPageBar((prev) => !prev);
@@ -60,7 +83,7 @@ const MainPage = () => {
 
   // 보고서 생성 챗봇 클릭 핸들러
   const handleChatbotClick = () => {
-    navigate("/chatbot"); 
+    navigate("/edit"); 
     setShowSideBar(false); 
   };
 
@@ -121,8 +144,8 @@ const MainPage = () => {
             <div className="px-4 py-4 flex flex-col gap-4">
               <div className="text-transparent h-0"></div>
             </div>
-            <div className="p-2 pr-3 flex justify-start items-center gap-6 border-t border-gray-200">
-              <div className="flex-1 flex justify-start items-center gap-2">
+            <div className="p-2 pr-3 flex justify-between items-center border-t border-gray-200">
+              <div className="flex justify-start items-center gap-2">
                 <button
                   className="h-9 min-w-16 px-2 py-1.5 rounded flex justify-center items-center gap-2 hover:bg-purple-50 transition-colors"
                   onClick={handleMyPageButtonClick}
@@ -131,15 +154,17 @@ const MainPage = () => {
                     mypage
                   </div>
                 </button>
+              </div>
+              <div className="flex items-center gap-4">
                 <button
-                  className="h-9 min-w-16 px-2 py-1.5 rounded flex justify-center items-center gap-2 hover:bg-purple-50 transition-colors"
+                  className="h-9 min-w-16 px-2 py-1.5 rounded flex justify-center items-center gap-2 hover:bg-red-50 transition-colors"
+                  onClick={handleLogout}
                 >
-                  <div className="text-center text-[#6200E8] text-sm font-medium uppercase leading-6 tracking-wide">
-                    Button
+                  <div className="text-center text-red-600 text-sm font-medium uppercase leading-6 tracking-wide">
+                    logout
                   </div>
                 </button>
-              </div>
-              <div className="flex justify-start items-center gap-6">
+                <div className="flex justify-start items-center gap-2">
                   <button className="w-6 h-6 flex items-center justify-center" onClick={() => console.log('Fav clicked')}>
                   </button>
                   <img
@@ -149,6 +174,7 @@ const MainPage = () => {
                     onClick={() => console.log('More options clicked')}
                   />
                 </div>
+              </div>
             </div>
           </div>
         )}

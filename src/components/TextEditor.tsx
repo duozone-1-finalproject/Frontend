@@ -11,20 +11,26 @@ import { TableCell } from '@tiptap/extension-table-cell';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import { Highlight } from '@tiptap/extension-highlight';
+import { type ReportFormData } from '../service/mockDataService';
 
 interface TextEditorProps {
   initialContent: string;
   onContentChange: (html: string) => void;
   isReadOnly?: boolean;
+  currentReport?: ReportFormData | null;
+  onLoadFormData?: (formData: ReportFormData) => void; // 폼 데이터를 상위로 전달
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({
   initialContent,
   onContentChange,
   isReadOnly = false,
+  currentReport,
+  onLoadFormData,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
 
   const textColors = [
     '#000000',
@@ -105,11 +111,20 @@ const TextEditor: React.FC<TextEditorProps> = ({
     },
   });
 
+  // 초기 콘텐츠 로드 및 업데이트 처리
   useEffect(() => {
-    if (editor && initialContent && editor.getHTML() !== initialContent) {
+    if (editor && initialContent && !isContentLoaded) {
       editor.commands.setContent(initialContent);
+      setIsContentLoaded(true);
     }
-  }, [editor, initialContent]);
+  }, [editor, initialContent, isContentLoaded]);
+
+  // currentReport가 변경될 때 에디터 초기화
+  useEffect(() => {
+    if (currentReport) {
+      setIsContentLoaded(false);
+    }
+  }, [currentReport]);
 
   if (!editor) {
     return (
@@ -139,13 +154,77 @@ const TextEditor: React.FC<TextEditorProps> = ({
     </button>
   );
   
-  const loadLeftContent = () => {
-    const leftFormattedContent = `
+  // 현재 보고서 데이터를 기반으로 폼 양식 생성
+  const loadCurrentReportForm = () => {
+    if (!currentReport) {
+      alert('불러올 보고서 데이터가 없습니다.');
+      return;
+    }
+
+    const { 
+      title, 
+      subtitle, 
+      recipient, 
+      date, 
+      companyName, 
+      ceoName, 
+      address, 
+      responsiblePerson, 
+      securitiesInfo 
+    } = currentReport;
+
+    // 제목 색상을 동적으로 설정 (보고서 유형에 따라)
+    let titleColor = '#2563eb'; // 기본 파란색
+    if (title.includes('채권')) titleColor = '#059669'; // 초록색
+    if (title.includes('사업보고서')) titleColor = '#7c3aed'; // 보라색
+
+    const formattedContent = `
+      <h1 style="text-align: center; font-size: 3rem; font-weight: 800; color: ${titleColor}; margin: 1rem 0; letter-spacing: 0.1em;">${title.replace(/(\S)/g, '$1 ').trim()}</h1>
+      <h2 style="text-align: center; color: #4b5563; font-size: 1.125rem; margin: 0.5rem 0 2rem 0;">${subtitle}</h2>
+      <br>
+      <p><strong>${recipient}</strong></p>
+      <p style="text-align: right; font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0;">${date.year}년 ${date.month}월 ${date.day}일</p>
+      <br>
+      <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>회 사 명: ${companyName}</strong></p>
+      <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
+      <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>대 표 이 사: ${ceoName}</strong></p>
+      <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
+      <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>본 점 소 재 지: ${address}</strong></p>
+      <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
+      <br>
+      <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>작 성 책 임 자: ${responsiblePerson}</strong></p>
+      <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
+      <br>
+      <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>${title.includes('사업보고서') ? '상장구분' : '모집 또는 매출 증권의 종류 및 수'}: ${securitiesInfo}</strong></p>
+      <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
+      <br>
+      <p>--------------------------------------------------</p>
+      <p><strong>※ 이 부분부터는 자유롭게 편집할 수 있습니다.</strong></p>
+      <p>위의 양식 정보는 "${companyName}"의 실제 데이터로 자동 생성되었습니다.</p>
+      <p>필요에 따라 아래 본문 내용을 수정하거나 새로운 내용을 추가하세요.</p>
+    `;
+    
+    editor.commands.setContent(formattedContent);
+    
+    // 상위 컴포넌트에 폼 데이터 전달 (왼쪽 미리보기 업데이트용)
+    if (onLoadFormData) {
+      onLoadFormData(currentReport);
+    }
+
+    // 성공 메시지
+    setTimeout(() => {
+      alert(`"${companyName}"의 ${title} 양식이 로드되었습니다!`);
+    }, 100);
+  };
+
+  // 기본 빈 양식 로드
+  const loadEmptyForm = () => {
+    const emptyFormContent = `
       <h1 style="text-align: center; font-size: 3rem; font-weight: 800; color: #2563eb; margin: 1rem 0; letter-spacing: 0.1em;">증 권 신 고 서</h1>
       <h2 style="text-align: center; color: #4b5563; font-size: 1.125rem; margin: 0.5rem 0 2rem 0;">( 지 분 증 권 )</h2>
       <br>
       <p><strong>금융위원회 귀중</strong></p>
-      <p style="text-align: right; font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0;">2022년 08월 16일</p>
+      <p style="text-align: right; font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0;">____년 __월 __일</p>
       <br>
       <p style="font-weight: 600; color: #374151; margin: 1rem 0 0.25rem 0;"><strong>회 사 명:</strong></p>
       <hr style="border: none; border-bottom: 1px solid #d1d5db; margin: 0.5rem 0 1rem 0; height: 1.5rem;">
@@ -163,7 +242,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
       <p>--------------------------------------------------</p>
       <p>이 부분부터는 자유롭게 편집할 수 있습니다.</p>
     `;
-    editor.commands.setContent(leftFormattedContent);
+    editor.commands.setContent(emptyFormContent);
   };
   
   const applyReportTitle = () => {
@@ -412,15 +491,35 @@ const TextEditor: React.FC<TextEditorProps> = ({
       {/* 툴바 */}
       {!isReadOnly && (
         <div className="border-b p-3 bg-gray-50 flex flex-wrap gap-2 items-center">
-          {/* 왼쪽 내용 불러오기 버튼 */}
+          {/* 양식 불러오기 버튼들 */}
           <div className="flex gap-1 border-r pr-2 mr-2">
             <ToolbarButton
-              onClick={loadLeftContent}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold"
+              onClick={loadCurrentReportForm}
+              disabled={!currentReport}
+              className={`font-semibold ${
+                currentReport 
+                  ? 'bg-purple-100 hover:bg-purple-200 text-purple-800' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              ← 왼쪽 양식 불러오기
+              📊 현재 보고서 양식 불러오기
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={loadEmptyForm}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold"
+            >
+              📝 빈 양식
             </ToolbarButton>
           </div>
+
+          {/* 현재 보고서 정보 표시 */}
+          {currentReport && (
+            <div className="flex items-center gap-2 border-r pr-2 mr-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                현재: {currentReport.companyName} - {currentReport.title}
+              </span>
+            </div>
+          )}
 
           {/* 기본 서식 */}
           <div className="flex gap-1 border-r pr-2 mr-2">
@@ -641,9 +740,16 @@ const TextEditor: React.FC<TextEditorProps> = ({
       {/* 하단 상태바 */}
       <div className="border-t p-2 bg-gray-50 text-sm text-gray-600 flex justify-between">
         <span>문자 수: {editor.getText().length}개</span>
-        <span>
-          단어 수: {editor.getText().split(' ').filter((word) => word.length > 0).length}개
-        </span>
+        <div className="flex gap-4">
+          <span>
+            단어 수: {editor.getText().split(' ').filter((word) => word.length > 0).length}개
+          </span>
+          {currentReport && (
+            <span className="text-blue-600">
+              현재 편집: {currentReport.companyName} ({currentReport.title})
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
