@@ -26,6 +26,11 @@ export default function EditorToolbar({
 }: EditorToolbarProps) {
   return (
     <>
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-700">
+          💡 편집 모드: 문서의 텍스트를 선택한 뒤 위 도구를 사용해 서식을 적용하고 수정하세요.
+        </p>
+      </div>
       <div className="mb-4 p-2 bg-gray-100 border border-gray-300 rounded-lg flex flex-wrap gap-2">
         <Button size="sm" onClick={() => onApplyStyle("bold")} variant="outline">
           <Bold className="w-4 h-4" />
@@ -90,12 +95,6 @@ export default function EditorToolbar({
         <Button size="sm" onClick={onRedo} variant="outline" disabled={!document.queryCommandEnabled("redo")}>
           <Redo className="w-4 h-4" />
         </Button>
-      </div>
-      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-700">
-          💡 편집 모드: 문서의 텍스트를 선택한 뒤 위 도구를 사용해 서식을 적용하거나 테이블을 삽입하세요. 언도/리두로
-          편집 취소/재수행 가능.
-        </p>
       </div>
     </>
   )
