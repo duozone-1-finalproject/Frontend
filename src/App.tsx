@@ -5,6 +5,7 @@ import MainPage from "./pages/MainPage";
 import RegisterPage from "./pages/RegisterPage";
 import OAuthSuccessPage from './pages/OAuthSuccessPage';
 import EditPage from "./pages/EditPage";
+import ChatBotPage from "./pages/ChatBotPage";
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/Register" element={<RegisterPage />} />
         <Route path="/oauth-success" element={<OAuthSuccessPage />} />
         <Route path="/edit" element={<EditPage />} />
+        <Route path="/chatbot" element={<ChatBotPage />} />
       </Routes>
     </Router>
   );
