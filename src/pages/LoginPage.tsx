@@ -14,7 +14,8 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('/auth/login', form);
+      // REST API 규칙에 맞춰 세션 생성 엔드포인트 사용
+      const response = await axios.post('/auth/sessions', form);
       const { accessToken } = response.data;
       localStorage.setItem('accessToken', accessToken);
       navigate('/main');
@@ -76,7 +77,7 @@ const LoginPage = () => {
           </button>
 
           <div
-            //AuthController의 /auth/register 엔드포인트로 이동
+            // REST API 규칙에 맞춰 사용자 리소스 생성 페이지로 이동
             onClick={() => navigate('/register')} // React Router를 통해 /register 페이지로 이동함.
             className="text-center text-sm text-gray-500 underline cursor-pointer"
           >

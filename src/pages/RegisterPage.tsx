@@ -23,7 +23,8 @@ const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/auth/register", formData);
+      // REST API 규칙에 맞춰 사용자 리소스 생성 엔드포인트 사용
+      const res = await axios.post("/users", formData);
       console.log("✅ 회원가입 성공:", res.data);
       alert("회원가입이 완료되었습니다. 로그인 해주세요."); // 사용자에게 알림
       navigate("/login");
