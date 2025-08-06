@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 import { ReportCanvas } from '../components/ReportCanvas';
 import { generateSecuritiesReportTemplate } from '../api/GetData'
 import { useNavigate } from "react-router-dom"
