@@ -1,5 +1,4 @@
-# 워크플로우의 이름
-name: CI/CD - Build and Push frontend FRONTEND Docker Image
+name: Build and Push Frontend Docker Image
 
 # 이 워크플로우가 언제 실행될지 정의 (dev 브랜치에 push 이벤트가 발생했을 때)
 on:
