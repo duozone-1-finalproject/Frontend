@@ -1,4 +1,4 @@
-name: Deploy Frontend
+name: Build & Deploy Frontend
 
 on:
   push:
@@ -6,15 +6,46 @@ on:
       - main
 
 env:
-  KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}  # base64 인코딩된 kubeconfig
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: srg/frontend
+  KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}  # base64 인코딩 kubeconfig
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      # 1️⃣ 코드 체크아웃
+      - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2️⃣ AWS 로그인
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3️⃣ ECR 로그인
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # 4️⃣ Docker 이미지 빌드
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+
+      # 5️⃣ Docker 이미지 태그 & 푸시
+      - name: Tag and push to ECR
+        run: |
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # 6️⃣ kubectl 설정
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
 
@@ -22,8 +53,14 @@ jobs:
         run: |
           echo "${KUBE_CONFIG_DATA}" | base64 --decode > $HOME/.kube/config
 
-      - name: Deploy Frontend
+      # 7️⃣ Deployment 생성/업데이트
+      - name: Deploy to Kubernetes
         run: |
+          # Deployment가 없으면 생성
           kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl set image deployment/frontend frontend=<ECR_REGISTRY>/srg/frontend:${{ github.sha }} --namespace=default
+          
+          # IMAGE_TAG로 최신 이미지 적용
+          kubectl set image deployment/frontend frontend=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG --namespace=default
+          
+          # 롤아웃 상태 확인
           kubectl rollout status deployment/frontend --namespace=default
