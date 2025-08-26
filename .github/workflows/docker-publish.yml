@@ -3,7 +3,7 @@ name: CI/CD - Build and Deploy Frontend to EKS
 on:
   push:
     branches:
-      - feature/infra  # 필요 시 main으로 변경 가능
+      - feature/infra  
 
 jobs:
   build-and-deploy:
