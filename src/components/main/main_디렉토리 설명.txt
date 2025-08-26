@@ -1,0 +1,21 @@
+📁 src/components/main/
+
+목적: 메인 페이지 전용 컴포넌트들
+포함된 컴포넌트들:
+
+MainPageSections.tsx - 메인 페이지의 각 섹션들
+
+HeroSection: 히어로 이미지 섹션
+PageTitleSection: 페이지 제목 섹션 ("증권신고서 | 발행공시")
+SecurityButtonsSection: 증권 유형 버튼들 (지분증권, 채무증권 등)
+SecurityButton: 개별 증권 버튼 컴포넌트
+
+
+index.ts - 메인 페이지 컴포넌트들의 export 진입점
+
+특징:
+
+금융/증권 도메인에 특화된 UI
+그라데이션 색상을 활용한 시각적 계층 구조
+호버 효과가 적용된 인터랙티브 버튼들
+비즈니스 로직과 UI의 분리

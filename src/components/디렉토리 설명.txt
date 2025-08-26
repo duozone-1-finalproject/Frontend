@@ -1,0 +1,17 @@
+📁 src/components/common/
+목적: 애플리케이션 전체에서 재사용 가능한 공통 UI 컴포넌트들
+
+📁 src/components/layout/
+목적: 페이지 레이아웃과 전체적인 구조를 담당하는 컴포넌트들
+
+==================================================================
+📁 src/components/auth/
+목적: 로그인 / 회원가입 페이지 전용 컴포넌트들
+/login, /oauth, /register 폴더로 구분함.
+
+
+📁 src/components/main/
+목적: 메인 페이지 전용 컴포넌트들
+
+📁 src/components/mypage/
+목적: 마이 페이지 전용 컴포넌트들

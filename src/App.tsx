@@ -4,18 +4,20 @@ import LoginPage from "./pages/LoginPage";
 import MainPage from "./pages/MainPage";
 import RegisterPage from "./pages/RegisterPage";
 import OAuthSuccessPage from './pages/OAuthSuccessPage';
-import EditPage from "./pages/EditPage";
+import MyPage from "./pages/MyPage";
+import DartViewer from "./pages/DartViewer";
 
-const App = () => {
+const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} /> 
         <Route path="/main" element={<MainPage />} />
-        <Route path="/Register" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/oauth-success" element={<OAuthSuccessPage />} />
-        <Route path="/edit" element={<EditPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/dartviewer" element={<DartViewer />} />
       </Routes>
     </Router>
   );

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html style="border:0">
+
+<head>
+    <title></title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="X-UA-TextLayoutMetrics" content="gdi">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="https://dart.fss.or.kr/css/report_xml.css">
+    <style>
+        span.highlight {
+            background-color: #ffff00;
+        }
+
+        span.highlight.on {
+            background-color: #ffb700;
+        }
+
+        .bookmark {
+            background-color: #FFF0F0 !important;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body bgcolor="#FFFFFF">
+  <div class="part">
+    <p><br></p>
+    <p class="part"><a name="toc1">요약정보</a></p>
+    <p style="font-family:DartNBSP, &quot;굴림&quot;, Gulim;"><br></p>
+    <div class="section-2" data-section="핵심투자위험">
+      <p><br></p>
+      <p class="section-2"><a name="toc2">1. 핵심투자위험</a></p>
+      <table border="1" width="600">
+          <colgroup>
+              <col width="600">
+          </colgroup>
+          <tbody>
+              <tr height="99">
+                  <td width="591" height="92" valign="TOP">하단의 핵심투자위험은 증권신고서 본문에 기재된 투자위험요소 중 중요한 항목만을 투자자의 이해도 제고를 위하여 간단ㆍ명료하게 요약한 것입니다. 자세한 투자위험요소는 "본문-제1부 모집 또는 매출에 관한 사항-Ⅲ. 투자위험요소"에 기재되어 있으니 참고하시기 바랍니다.</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="600">
+          <colgroup>
+              <col width="108">
+              <col width="492">
+          </colgroup>
+          <tbody>
+              <tr height="30">
+                  <td width="99" height="23" align="CENTER">구 분</td>
+                  <td width="483" height="23" align="CENTER">내 용</td>
+              </tr>
+              <tr height="100">
+                  <td width="99" height="100" align="CENTER">사업위험</td>
+                  <td width="483" height="100" valign="TOP" style="color:#FF0000;">
+                      <p><br></p>
+                      <p><br>
+                        <span style="font-weight:bold;">{{businessRiskTitle}}</span><br><br>{{businessRiskValue}}<br><br>
+                      </p>
+                  </td>
+              </tr>
+              <tr height="100">
+                  <td width="99" height="100" align="CENTER">회사위험</td>
+                  <td width="483" height="100" valign="TOP" style="color:#FF0000;">
+                    <p><br></p>
+                    <p>
+                      <span style="font-weight:bold;">{{companyRiskTitle}}<br></span><br>{{companyRiskValue}}<br><br><br>
+                    </p>
+                  </td>
+              </tr>
+              <tr height="100">
+                  <td width="99" height="100" align="CENTER">기타 투자위험</td>
+                  <td width="483" height="100" valign="TOP" style="color:#FF0000;">
+                      <p>
+                        <span style="font-size:12pt;line-height:1.6em;"><br></span>
+                        <span style="font-weight:bold;">{{otherRiskTitle}}<br></span>{{otherRiskTitle}}<br>
+                      </p>
+                      <p><br></p>
+                  </td>
+              </tr>
+          </tbody>
+      </table>
+      <p style="font-family:DartNBSP, &quot;굴림&quot;, Gulim;color:#FF0000;"><br><br></p>
+      <p class="pgbrk"></p>
+    </div>
+    <div class="section-2" data-section="모집 또는 매출에 관한 일반사항">
+      <p><br></p>
+      <p class="section-2"><a name="toc3">2. 모집 또는 매출에 관한 일반사항</a></p>
+      <table class="nb" width="782">
+          <colgroup>
+              <col width="300">
+              <col width="482">
+          </colgroup>
+          <tbody>
+              <tr height="30">
+                  <td width="291" height="23" valign="TOP" style="color:#FF0000;"><br></td>
+                  <td width="473" height="23" align="RIGHT" valign="BOTTOM">(단위 : 원, 주)</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="131">
+              <col width="131">
+              <col width="131">
+              <col width="131">
+              <col width="131">
+              <col width="130">
+          </colgroup>
+          <thead>
+              <tr height="53">
+                  <th width="122" height="46">증권의<br>종류</th>
+                  <th width="122" height="46">증권수량</th>
+                  <th width="122" height="46">액면가액</th>
+                  <th width="122" height="46">모집(매출)<br>가액</th>
+                  <th width="122" height="46">모집(매출)<br>총액</th>
+                  <th width="121" height="46">모집(매출)<br>방법</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="122" height="23" align="CENTER">{{stockType}}</td>
+                  <td width="122" height="23" align="CENTER">{{stockQuantity}}</td>
+                  <td width="122" height="23" align="CENTER">{{parValue}}</td>
+                  <td width="122" height="23" align="CENTER">{{offeringPrice}}</td>
+                  <td width="122" height="23" align="CENTER">{{totalOfferingAmount}}</td>
+                  <td width="121" height="23" align="CENTER">{{offeringMethod}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="197">
+              <col width="196">
+              <col width="196">
+              <col width="196">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="188" height="23">인수(주선) 여부</th>
+                  <th width="579" height="23" colspan="3">지분증권 등 상장을 위한 공모여부</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="188" height="23" align="CENTER">{{underwritingStatus}}</td>
+                  <td width="187" height="23" align="CENTER">{{listingStatus}}</td>
+                  <td width="187" height="23" align="CENTER">{{marketType}}</td>
+                  <td width="187" height="23" align="CENTER">{{listingType}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="784">
+          <colgroup>
+              <col width="112">
+              <col width="112">
+              <col width="112">
+              <col width="112">
+              <col width="112">
+              <col width="112">
+              <col width="112">
+          </colgroup>
+          <thead>
+              <tr height="53">
+                  <th width="215" height="46" colspan="2">인수(주선)인</th>
+                  <th width="103" height="46">증권의<br>종류</th>
+                  <th width="103" height="46">인수수량</th>
+                  <th width="103" height="46">인수금액</th>
+                  <th width="103" height="46">인수대가</th>
+                  <th width="103" height="46">인수방법</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="53">
+                  <td width="103" height="46" align="CENTER">대표</td>
+                  <td width="103" height="46" align="CENTER">{{underwriterName}}</td>
+                  <td width="103" height="46" align="CENTER">{{underwriterStockType}}</td>
+                  <td width="103" height="46" align="CENTER">{{underwritingQuantity}}</td>
+                  <td width="103" height="46" align="CENTER">{{underwritingAmount}}</td>
+                  <td width="103" height="46" align="CENTER">{{underwritingFee}}</td>
+                  <td width="103" height="46" align="CENTER">{{underwritingMethod}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="277">
+              <col width="137">
+              <col width="137">
+              <col width="137">
+              <col width="97">
+          </colgroup>
+          <thead>
+              <tr height="32">
+                  <th width="268" height="25">청약기일</th>
+                  <th width="128" height="25">납입기일</th>
+                  <th width="128" height="25">청약공고일</th>
+                  <th width="128" height="25">배정공고일</th>
+                  <th width="88" height="25">배정기준일</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="268" height="23" align="CENTER">{{subscriptionDate}}</td>
+                  <td width="128" height="23" align="CENTER">{{paymentDate}}</td>
+                  <td width="128" height="23" align="CENTER">{{subscriptionNoticeDate}}</td>
+                  <td width="128" height="23" align="CENTER">{{allocationNoticeDate}}</td>
+                  <td width="88" height="23" align="CENTER">{{allocationBaseDate}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="300">
+              <col width="485">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="776" height="23" colspan="2">청약이 금지되는 공매도 거래 기간</th>
+              </tr>
+              <tr height="30">
+                  <th width="291" height="23">시작일</th>
+                  <th width="476" height="23">종료일</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="291" height="23" align="CENTER">{{shortSellingStartDate}}</td>
+                  <td width="476" height="23" align="CENTER">{{shortSellingEndDate}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="784">
+          <colgroup>
+              <col width="300">
+              <col width="484">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="775" height="23" colspan="2">자금의 사용목적</th>
+              </tr>
+              <tr height="30">
+                  <th width="291" height="23">구 &nbsp; 분</th>
+                  <th width="475" height="23">금 &nbsp; 액</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="291" height="23" align="CENTER">{{FundAmountTitle}}</td>
+                  <td width="475" height="23" align="RIGHT">{{FundAmount}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="784">
+          <colgroup>
+              <col width="200">
+              <col width="200">
+              <col width="384">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="775" height="23" colspan="3">신주인수권에 관한 사항</th>
+              </tr>
+              <tr height="30">
+                  <th width="191" height="23">행사대상증권</th>
+                  <th width="191" height="23">행사가격</th>
+                  <th width="375" height="23">행사기간</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="191" height="23" align="CENTER">{{warrantTarget}}</td>
+                  <td width="191" height="23" align="CENTER">{{warrantPrice}}</td>
+                  <td width="375" height="23" align="CENTER">{{warrantPeriod}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="120">
+              <col width="120">
+              <col width="120">
+              <col width="120">
+              <col width="305">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="776" height="23" colspan="5">매출인에 관한 사항</th>
+              </tr>
+              <tr height="53">
+                  <th width="111" height="46">보유자</th>
+                  <th width="111" height="46">회사와의<br>관계</th>
+                  <th width="111" height="46">매출전<br>보유증권수</th>
+                  <th width="111" height="46">매출증권수</th>
+                  <th width="296" height="46">매출후<br>보유증권수</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="111" height="23" align="CENTER">{{sellerName}}</td>
+                  <td width="111" height="23" align="CENTER">{{sellerRelationship}}</td>
+                  <td width="111" height="23" align="CENTER">{{preSaleShares}}</td>
+                  <td width="111" height="23" align="CENTER">{{saleShares}}</td>
+                  <td width="296" height="23" align="CENTER">{{postSaleShares}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="120">
+              <col width="120">
+              <col width="120">
+              <col width="120">
+              <col width="305">
+          </colgroup>
+          <thead>
+              <tr height="30">
+                  <th width="776" height="23" colspan="5">일반청약자 환매청구권</th>
+              </tr>
+              <tr height="30">
+                  <th width="111" height="23">부여사유</th>
+                  <th width="111" height="23">행사가능 투자자</th>
+                  <th width="111" height="23">부여수량</th>
+                  <th width="111" height="23">행사기간</th>
+                  <th width="296" height="23">행사가격</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr height="30">
+                  <td width="111" height="23" align="CENTER">{{putOptionReason}}</td>
+                  <td width="111" height="23" align="CENTER">{{putOptionInvestor}}</td>
+                  <td width="111" height="23" align="RIGHT">{{putOptionQuantity}}</td>
+                  <td width="111" height="23" align="CENTER">{{putOptionPeriod}}</td>
+                  <td width="296" height="23" align="RIGHT">{{putOptionPrice}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <table border="1" width="785">
+          <colgroup>
+              <col width="166">
+              <col width="619">
+          </colgroup>
+          <tbody>
+              <tr height="30">
+                  <td width="157" height="23">【주요사항보고서】</td>
+                  <td width="610" height="23" align="CENTER">{{majorDisclosureValue}}</td>
+              </tr>
+              <tr height="30">
+                  <td width="157" height="23">【기 타】</td>
+                  <td width="610" height="23" align="CENTER">{{otherValue}}</td>
+              </tr>
+          </tbody>
+      </table>
+      <p style="font-family:DartNBSP, &quot;굴림&quot;, Gulim;"><br></p>
+      <p class="pgbrk"></p>
+      <p><br></p>
+    </div>
+  </div>
+
+</body>
+
+</html>

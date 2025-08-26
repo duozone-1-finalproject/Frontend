@@ -1,0 +1,18 @@
+📁 src/components/common/
+
+목적: 애플리케이션 전체에서 재사용 가능한 공통 UI 컴포넌트들
+포함된 컴포넌트들:
+
+Button.tsx - 다양한 스타일(primary, secondary, outline, ghost, danger)과 크기를 지원하는 버튼 컴포넌트
+Card.tsx - 카드 레이아웃 컴포넌트 (Header, Content, Footer 하위 컴포넌트 포함)
+Input.tsx - 라벨, 에러 메시지, 헬퍼 텍스트, 아이콘을 지원하는 입력 필드 컴포넌트
+Loading.tsx - 로딩 스피너, 아바타, 배지 컴포넌트들
+Modal.tsx - 모달 다이얼로그 컴포넌트 (ESC 키 지원, 오버레이 클릭 닫기)
+index.ts - 모든 컴포넌트와 타입 정의를 외부로 export하는 진입점
+
+특징:
+
+Tailwind CSS를 활용한 일관된 디자인 시스템
+TypeScript 인터페이스를 통한 타입 안전성 보장
+접근성(a11y) 고려 (focus 상태, ARIA 속성)
+재사용성을 위한 유연한 props 인터페이스

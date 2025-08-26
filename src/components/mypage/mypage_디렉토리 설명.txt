@@ -1,0 +1,115 @@
+components/mypage/
+├── MyPageSections.tsx          # 메인 페이지 섹션 컴포넌트들
+├── EventModal.tsx              # 일정 추가/수정 모달 컴포넌트
+├── index.ts                    # mypage 레벨 통합 export 파일
+└── calendar/                   # 캘린더 관련 컴포넌트 서브폴더
+    ├── CalendarHeader.tsx      # 캘린더 상단 헤더 컴포넌트
+    ├── CalendarGrid.tsx        # 달력 그리드 레이아웃 컴포넌트
+    ├── CalendarDay.tsx         # 개별 날짜 셀 컴포넌트
+    ├── CalendarLegend.tsx      # 캘린더 범례/가이드 컴포넌트
+    ├── DayPreview.tsx          # 선택 날짜 일정 미리보기 컴포넌트
+    └── index.ts                # calendar 레벨 통합 export 파일
+    
+📁 폴더별 상세 설명
+/components/mypage/ (루트 레벨)
+마이페이지의 주요 기능들을 담고 있는 최상위 폴더입니다.
+📄 MyPageSections.tsx
+
+역할: 마이페이지의 주요 섹션들을 정의
+포함 컴포넌트:
+
+MyPageHeader - 페이지 상단 헤더 (제목, 네비게이션)
+ProfileSection - 사용자 프로필 정보 섹션
+ProjectsSection - 진행중인 프로젝트 목록 섹션
+FavoritesSection - 즐겨찾기 항목 섹션
+SettingsSection - 사용자 설정 메뉴 섹션
+CalendarSection - 통합 캘린더 섹션 (calendar 폴더의 컴포넌트들을 조합)
+
+
+
+📄 EventModal.tsx
+
+역할: 일정 생성/수정을 위한 모달 다이얼로그
+기능:
+
+일정 제목, 날짜, 시간, 카테고리, 설명 입력
+신규 일정 추가 및 기존 일정 수정
+유효성 검사 및 폼 처리
+
+
+재사용성: 캘린더 외 다른 섹션에서도 활용 가능하도록 상위 레벨에 배치
+
+📄 index.ts
+
+역할: mypage 레벨의 모든 컴포넌트를 통합 export
+장점: 다른 파일에서 import { ProfileSection } from 'components/mypage' 형태로 깔끔한 import 가능
+
+/components/mypage/calendar/ (서브 레벨)
+캘린더 기능에 특화된 세분화된 컴포넌트들을 모아둔 서브폴더입니다.
+📄 CalendarHeader.tsx
+
+역할: 캘린더 상단 헤더 UI
+기능:
+
+캘린더 제목 표시
+월간 네비게이션 (이전/다음 월 이동)
+일정 추가 버튼
+
+
+UI 요소: 제목, 좌/우 화살표 버튼, 플러스 버튼
+
+📄 CalendarGrid.tsx
+
+역할: 달력의 그리드 레이아웃 담당
+기능:
+
+월간 캘린더 그리드 렌더링
+요일 헤더 표시
+날짜별 이벤트 점 표시
+빈 칸 처리 (월 시작 전 날짜들)
+
+
+의존성: CalendarDay 컴포넌트를 활용
+
+📄 CalendarDay.tsx
+
+역할: 개별 날짜 셀의 렌더링
+기능:
+
+날짜 숫자 표시
+오늘/선택일 하이라이트
+해당 날짜의 이벤트 인디케이터 (색깔별 점)
+이벤트 수 초과시 "+N" 표시
+클릭 이벤트 처리
+
+
+상태 관리: 오늘, 선택됨, 일반 상태에 따른 스타일 변경
+
+📄 CalendarLegend.tsx
+
+역할: 캘린더 색상 범례 표시
+기능:
+
+각 색상의 의미 설명 (오늘, 미팅, 마감일, 사용자 일정)
+사용자 이해도 향상을 위한 가이드 제공
+
+
+UI: 작은 색상 점과 설명 텍스트 조합
+
+📄 DayPreview.tsx
+
+역할: 선택된 날짜의 상세 일정 미리보기
+기능:
+
+선택 날짜의 모든 일정 나열
+프로젝트 마감일 특별 표시
+일정별 편집/삭제 버튼 제공
+일정이 없을 때 추가 버튼 표시
+
+
+인터랙션: 호버 시 편집 도구 표시
+
+📄 index.ts
+
+역할: calendar 레벨의 모든 컴포넌트를 통합 export
+장점: 상위에서 import { CalendarHeader } from 'components/mypage/calendar' 형태로 import 가능

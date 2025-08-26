@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html style="border:0">
+<head>
+  <title></title>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta http-equiv="X-UA-TextLayoutMetrics" content="gdi">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="https://dart.fss.or.kr/css/report_xml.css">
+  <style>
+    span.highlight { background-color:#ffff00; }
+    span.highlight.on { background-color:#ffb700; }
+    .bookmark { background-color:#FFF0F0 !important; text-decoration:underline; }
+  </style>
+</head>
+<body bgcolor="#FFFFFF">
+  <div class="part">
+    <p><br></p>
+    <p class="cover-title"><a name="toc1">증 권 신 고 서</a></p>
+    <table class="nb" width="600">
+      <colgroup>
+        <col width="600">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td width="600" height="20" align="CENTER">( 지 분 증 권 )</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br></p>
+    <p><br></p>
+    <table class="nb" width="600">
+      <colgroup>
+        <col width="262">
+        <col width="338">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td width="262" height="20" valign="TOP">금융위원회 귀중</td>
+          <td width="338" height="20" align="RIGHT" valign="TOP">{{year}} &nbsp; &nbsp; &nbsp;{{month}} &nbsp; &nbsp; {{day}}</td>
+        </tr>
+        <tr>
+          <td width="262" height="43" valign="TOP"><br><br></td>
+          <td width="338" height="43" valign="TOP"><br></td>
+        </tr>
+        <tr>
+          <td width="262" height="43" valign="TOP">회 &nbsp; &nbsp; &nbsp; 사 &nbsp; &nbsp; &nbsp; 명 :<br><br></td>
+          <td width="338" height="43" valign="TOP">{{ company_name }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="43" valign="TOP">대 &nbsp; 표 &nbsp; &nbsp; 이 &nbsp; 사 :<br><br></td>
+          <td width="338" height="43" valign="TOP">{{ ceo_name }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="43" valign="TOP">본 &nbsp;점 &nbsp;소 &nbsp;재 &nbsp;지 :<br><br></td>
+          <td width="338" height="43" valign="TOP">{{ address }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP"><br></td>
+          <td width="338" height="20" valign="TOP">(전 &nbsp;화) {{ company_phone }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP"><br></td>
+          <td width="338" height="20" valign="TOP">(홈페이지) {{ company_website }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP"><br></td>
+          <td width="338" height="20" valign="TOP"><br></td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP">작 &nbsp;성 &nbsp;책 &nbsp;임 &nbsp;자 :</td>
+          <td width="338" height="20" valign="TOP">(직 &nbsp;책) {{ author_position }} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(성 &nbsp;명) {{ author_name }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP"><br></td>
+          <td width="338" height="20" valign="TOP">(전 &nbsp;화) {{ author_phone }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP"><br></td>
+          <td width="338" height="20" valign="TOP"><br></td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="nb" width="600">
+      <colgroup>
+        <col width="262">
+        <col width="180">
+        <col width="158">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td width="262" height="20" valign="TOP">모집 또는 매출 증권의 종류 및 수 :</td>
+          <td width="338" height="20" colspan="2" valign="TOP">{{ stock_type }} {{ stock_amount }}</td>
+        </tr>
+        <tr>
+          <td width="262" height="20" valign="TOP">모집 또는 매출총액 :</td>
+          <td width="180" height="20" align="RIGHT">&nbsp;{{ total_amount }}</td>
+          <td width="158" height="20" valign="TOP">원</td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="nb" width="600">
+      <colgroup>
+        <col width="600">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td width="600" height="20" valign="TOP">증권신고서 및 투자설명서 열람장소</td>
+        </tr>
+        <tr>
+          <td width="600" height="20" valign="TOP">&nbsp; &nbsp;가. 증권신고서</td>
+        </tr>
+        <tr>
+          <td width="600" height="20" valign="TOP">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;전자문서 : 금융위(금감원) 전자공시시스템 → &nbsp;{{ doc_url }}</td>
+        </tr>
+        <tr>
+          <td width="600" height="20" valign="TOP">&nbsp; &nbsp;나. 투자설명서</td>
+        </tr>
+        <tr>
+          <td width="600" height="20" valign="TOP">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;전자문서 : 금융위(금감원) 전자공시시스템 → &nbsp;{{ doc_url }}</td>
+        </tr>
+        <tr>
+          <td width="600" height="158" valign="TOP">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;서면문서 : 1) 한국거래소<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;: 서울시 영등포구 여의나루로 76<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;2) 오픈엣지테크놀로지 주식회사<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;: 서울특별시 강남구 역삼로 114 현죽빌딩 13층<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;3) 삼성증권 주식회사<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;: (본점) 서울특별시 서초구 서초대로74길 11<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;: (지점) 별첨 참조</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br><br></p>
+    <table border="1" width="597">
+      <colgroup>
+        <col width="597">
+      </colgroup>
+      <thead>
+        <tr>
+          <th width="597" height="20" align="CENTER" style="font-weight:bold;">[ 투자자 유의사항 ]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td width="597" height="30">{{ notice_investor }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br><br></p>
+    <table border="1" width="594">
+      <colgroup>
+        <col width="594">
+      </colgroup>
+      <thead>
+        <tr>
+          <th width="594" height="20" align="CENTER" style="font-weight:bold;">[ 예측정보에 관한 유의사항 ]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td width="594" height="30">{{ notice_forecast }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="pgbrk"></p>
+    <table border="1" width="594">
+      <colgroup>
+        <col width="594">
+      </colgroup>
+      <thead>
+        <tr>
+          <th width="594" height="20" align="CENTER" style="font-weight:bold;">[ 기타 공지 사항 ]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td width="594" height="30">{{ notice_etc }}</td>
+          <p></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p><br><br></p>
+  <p><br><br></p>
+  <p class="pgbrk"></p>
+  <p><br></p>
+</div>
+</body>
+</html>

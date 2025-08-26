@@ -1,0 +1,227 @@
+Auth 폴더 구조 완전 가이드
+
+components/auth/
+├── login/                      # 🔐 로그인 기능 전용 폴더
+│   ├── LoginForm.tsx          # 메인 로그인 폼 컴포넌트
+│   ├── LoginInputs.tsx        # 아이디/비밀번호 입력 필드
+│   ├── LoginOptions.tsx       # 로그인 옵션 (유지/저장)
+│   └── index.ts               # login 레벨 통합 export
+├── register/                   # 📝 회원가입 기능 전용 폴더
+│   ├── RegisterForm.tsx       # 메인 회원가입 폼 컴포넌트
+│   ├── RegisterInputs.tsx     # 회원가입 입력 필드들
+│   ├── RegisterActions.tsx    # 가입 버튼 및 액션들
+│   ├── RegisterNotice.tsx     # 회원가입 안내 메시지
+│   └── index.ts               # register 레벨 통합 export
+├── oauth/                      # 🌐 소셜 로그인 기능 전용 폴더
+│   ├── SocialLogin.tsx        # 소셜 로그인 버튼들
+│   ├── ProcessingStatus.tsx   # OAuth 처리 상태 표시
+│   └── index.ts               # oauth 레벨 통합 export
+└── index.ts                    # 🎯 auth 최상위 통합 export
+
+🔐 /login/ 폴더 - 로그인 기능
+
+📄 LoginForm.tsx
+메인 로그인 폼을 구성하는 컨테이너 컴포넌트
+typescriptinterface LoginFormComponentProps {
+  form: { username: string; password: string };
+  error: string;
+  loading: boolean;
+  rememberMe: boolean;
+  saveId: boolean;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLogin: (e: React.FormEvent) => void;
+  onOAuthLogin: (provider: OAuthProvider) => void;
+  onRegisterClick: () => void;
+  onRememberMeChange: (checked: boolean) => void;
+  onSaveIdChange: (checked: boolean) => void;
+}
+주요 기능:
+
+전체 로그인 폼 레이아웃 구성
+하위 컴포넌트들(LoginInputs, LoginOptions, SocialLogin) 조합
+폼 제출 이벤트 처리
+에러 메시지 표시
+회원가입 링크 제공
+
+📄 LoginInputs.tsx
+로그인 입력 필드들을 담당하는 컴포넌트
+typescriptinterface LoginInputsProps {
+  form: { username: string; password: string };
+  loading: boolean;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+주요 기능:
+
+아이디 입력 필드 (User 아이콘)
+비밀번호 입력 필드 (Lock 아이콘)
+로딩 상태에 따른 비활성화
+공통 Input 컴포넌트 활용
+
+📄 LoginOptions.tsx
+로그인 부가 옵션들을 담당하는 컴포넌트
+typescriptinterface LoginOptionsProps {
+  rememberMe: boolean;
+  saveId: boolean;
+  loading: boolean;
+  onRememberMeChange: (checked: boolean) => void;
+  onSaveIdChange: (checked: boolean) => void;
+}
+주요 기능:
+
+"로그인 유지" 체크박스
+"아이디 저장" 체크박스
+로딩 상태에 따른 비활성화
+체크박스 상태 변경 이벤트 처리
+
+📄 index.ts
+typescriptexport { LoginFormComponent as LoginForm } from './LoginForm';
+export { LoginInputs } from './LoginInputs';
+export { LoginOptions } from './LoginOptions';
+
+📝 /register/ 폴더 - 회원가입 기능
+📄 RegisterForm.tsx
+메인 회원가입 폼을 구성하는 컨테이너 컴포넌트
+typescriptinterface RegisterFormComponentProps {
+  formData: FormData;
+  errors: FormErrors;
+  loading: boolean;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onLoginClick: () => void;
+}
+주요 기능:
+
+전체 회원가입 폼 레이아웃 구성
+하위 컴포넌트들(RegisterInputs, RegisterActions, RegisterNotice) 조합
+폼 제출 처리
+로그인 페이지로 이동 링크
+
+📄 RegisterInputs.tsx
+회원가입 입력 필드들을 담당하는 컴포넌트
+typescriptinterface RegisterInputsProps {
+  formData: FormData;
+  errors: FormErrors;
+  loading: boolean;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+주요 기능:
+
+아이디 입력 필드 (User 아이콘, 3자 이상)
+비밀번호 입력 필드 (Lock 아이콘, 6자 이상)
+비밀번호 확인 필드 (Lock 아이콘)
+이메일 입력 필드 (Mail 아이콘)
+이름 입력 필드 (UserCheck 아이콘)
+각 필드별 유효성 검사 에러 표시
+
+📄 RegisterActions.tsx
+회원가입 액션 버튼들을 담당하는 컴포넌트
+typescriptinterface RegisterActionsProps {
+  errors: FormErrors;
+  loading: boolean;
+  onLoginClick: () => void;
+}
+주요 기능:
+
+회원가입 제출 버튼
+로그인으로 돌아가기 버튼
+전체 에러 메시지 표시
+로딩 상태 처리
+
+📄 RegisterNotice.tsx
+회원가입 관련 안내사항을 표시하는 컴포넌트
+typescriptexport const RegisterNotice: React.FC = () => { ... }
+주요 기능:
+
+관리자 승인 필요 안내
+파란색 배경의 알림 박스 스타일
+정적 정보 표시
+
+📄 index.ts
+typescriptexport { RegisterFormComponent as RegisterForm } from './RegisterForm';
+export { RegisterInputs } from './RegisterInputs';
+export { RegisterActions } from './RegisterActions';
+export { RegisterNotice } from './RegisterNotice';
+
+🌐 /oauth/ 폴더 - 소셜 로그인 기능
+📄 SocialLogin.tsx
+소셜 로그인 버튼들을 담당하는 컴포넌트
+typescripttype OAuthProvider = 'naver' | 'kakao' | 'google';
+
+interface SocialLoginProps {
+  onOAuthLogin: (provider: OAuthProvider) => void;
+}
+주요 기능:
+
+네이버, 카카오, 구글 소셜 로그인 버튼
+각 플랫폼별 아이콘 표시
+구분선과 안내 텍스트
+호버 효과 및 클릭 이벤트
+
+내부 컴포넌트:
+
+SocialLoginButton: 개별 소셜 로그인 버튼
+플랫폼별 설정 (providerConfig)
+
+📄 ProcessingStatus.tsx
+OAuth 인증 처리 상태를 표시하는 컴포넌트
+typescripttype ProcessingState = 'loading' | 'success' | 'error';
+
+interface ProcessingStatusProps {
+  state: ProcessingState;
+  message: string;
+  onManualRedirect?: () => void;
+}
+주요 기능:
+
+Loading 상태: 스피너, 진행률 바, "잠시 후 자동으로 이동합니다" 메시지
+Success 상태: 체크 아이콘, 성공 메시지, "1.5초 후 메인 페이지로 이동합니다" 안내
+Error 상태: 경고 아이콘, 에러 메시지, 수동 이동 버튼
+상태별 아이콘 및 색상 변경
+
+📄 index.ts
+typescriptexport { SocialLogin } from './SocialLogin';
+export { ProcessingStatus } from './ProcessingStatus';
+
+🎯 /auth/index.ts - 최상위 통합 Export
+typescript// Login 관련
+export { LoginForm, LoginInputs, LoginOptions } from './login';
+
+// Register 관련  
+export { RegisterForm, RegisterInputs, RegisterActions, RegisterNotice } from './register';
+
+// OAuth 관련
+export { SocialLogin, ProcessingStatus } from './oauth';
+
+// 타입들도 필요시 re-export
+export type { OAuthProvider } from './oauth/SocialLogin';
+
+🔄 Import 패턴 및 사용법
+
+1. 개별 폴더에서 Import
+typescript// 로그인 기능만 필요할 때
+import { LoginForm, LoginInputs } from 'components/auth/login';
+
+// 회원가입 기능만 필요할 때
+import { RegisterForm } from 'components/auth/register';
+
+// 소셜 로그인만 필요할 때
+import { SocialLogin } from 'components/auth/oauth';
+
+2. 통합 Import
+typescript// 여러 기능을 함께 사용할 때
+import { 
+  LoginForm, 
+  RegisterForm, 
+  SocialLogin, 
+  ProcessingStatus 
+} from 'components/auth';
+
+3. 페이지별 사용 예시
+typescript// LoginPage.tsx
+import { LoginForm } from 'components/auth';
+
+// RegisterPage.tsx  
+import { RegisterForm } from 'components/auth';
+
+// OAuthCallbackPage.tsx
+import { ProcessingStatus } from 'components/auth';
