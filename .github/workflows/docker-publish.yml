@@ -1,39 +1,58 @@
-name: Build and Push Frontend Docker Image
+name: CI/CD - Build and Deploy Frontend to EKS
 
-# 이 워크플로우가 언제 실행될지 정의 (dev 브랜치에 push 이벤트가 발생했을 때)
 on:
   push:
-    branches: [ "feature/infra" ]
+    branches:
+      - feature/infra  # 필요 시 main으로 변경 가능
 
-# 실행될 작업들 정의
 jobs:
-  # build-and-push 라는 이름의 작업
-  build-and-push:
-    # 이 작업이 실행될 가상 환경
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    # 작업 단계들
     steps:
-      # 1. 소스 코드 체크아웃 (내 저장소의 코드를 가상 환경으로 가져옴)
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # 2. Docker Hub 로그인
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      # Node.js 설정 (Next.js, React 등)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          node-version: 20
 
-      # 3. Docker 이미지 빌드 및 푸시
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      # AWS ECR 로그인
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Dockerfile이 있는 경로 (backend 서비스 폴더 기준)
-          context: .
-          # Dockerfile 이름
-          file: ./Dockerfile
-          # 빌드 후 바로 푸시
-          push: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
 
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/frontend-image:1.0
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Docker Build & Push
+      - name: Build and Push Docker image to ECR
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY=srg/frontend
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # kubeconfig 업데이트
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ap-northeast-2 --name eks-cluster
+
+      # EKS 배포 (Deployment 이미지 교체)
+      - name: Deploy to EKS
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          kubectl set image deployment/frontend frontend=$ECR_REGISTRY/srg/frontend:$IMAGE_TAG
