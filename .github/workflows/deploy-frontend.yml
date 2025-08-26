@@ -1,0 +1,29 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}  # base64 인코딩된 kubeconfig
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${KUBE_CONFIG_DATA}" | base64 --decode > $HOME/.kube/config
+
+      - name: Deploy Frontend
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl set image deployment/frontend frontend=<ECR_REGISTRY>/srg/frontend:${{ github.sha }} --namespace=default
+          kubectl rollout status deployment/frontend --namespace=default
