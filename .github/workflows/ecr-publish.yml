@@ -1,4 +1,4 @@
-name: CI/CD - Build and Deploy Frontend to EKS
+name: CI/CD - Build and Deploy Frontend to EKS 
 
 on:
   push:
