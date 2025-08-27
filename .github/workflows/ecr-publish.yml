@@ -10,22 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️. 코드 체크아웃
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # Node.js 설정
+      # 2️. Node.js 설정
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # 3️. 의존성 설치
       - name: Install dependencies
         run: npm ci
 
-      - name: Build frontend (ignore warnings)
-        run: CI=false npm run build   # ✅ CI=false 추가
+      # 4️. 프론트엔드 빌드 (경고 무시)
+      - name: Build frontend
+        run: CI=false npm run build
 
-      # AWS ECR 로그인
+      # 5️. AWS 인증 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -33,11 +36,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
+      # 6️. ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Docker Build & Push
+      # 7️. Docker 이미지 빌드 및 ECR 푸시
       - name: Build and Push Docker image to ECR
         run: |
           IMAGE_TAG=${{ github.sha }}
@@ -46,13 +50,45 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      # kubeconfig 업데이트
+      # 8️. kubeconfig 업데이트
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ap-northeast-2 --name eks-cluster
 
-      # EKS 배포
-      - name: Deploy to EKS
+      # 9. Deployment YAML 생성 (nodeSelector 포함)
+      - name: Create deployment YAML
         run: |
           IMAGE_TAG=${{ github.sha }}
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          kubectl set image deployment/frontend frontend=$ECR_REGISTRY/srg/frontend:$IMAGE_TAG
+          cat <<EOF > frontend-deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: frontend
+            namespace: default
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: frontend
+            template:
+              metadata:
+                labels:
+                  app: frontend
+              spec:
+                nodeSelector:
+                  eks.amazonaws.com/nodegroup: web_api
+                containers:
+                  - name: frontend
+                    image: $ECR_REGISTRY/srg/frontend:$IMAGE_TAG
+                    imagePullPolicy: Always
+                    ports:
+                      - containerPort: 3000
+          EOF
+
+      # 10. EKS 배포
+      - name: Deploy to EKS
+        run: |
+          # Deployment 적용
+          kubectl apply -f frontend-deployment.yaml
+          # 롤아웃 상태 확인
+          kubectl rollout status deployment/frontend --namespace=default
