@@ -74,7 +74,8 @@ export function DocumentContent({
   useEffect(() => {
     const fetchTemplateData = async () => {
       try {
-        const response = await axios.get('/api/dart/test/01571107/all-data');
+        const corp_code ="01571107"
+        const response = await axios.get(`/api/dart/test/${corp_code}/all-data`);
         if (response.data && response.data.status === "SUCCESS") {
           const apiData = response.data.data;
           
