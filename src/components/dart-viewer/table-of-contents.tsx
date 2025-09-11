@@ -2,12 +2,7 @@
 
 import { ChevronDown, ChevronRight, Edit, Folder, FolderOpen, FileText } from 'lucide-react'
 import React from 'react'
-
-interface DocumentSection {
-  id: string
-  title: string
-  children?: DocumentSection[]
-}
+import { DocumentSection } from '../../types/dartViewer'
 
 interface TableOfContentsProps {
   sections: DocumentSection[]

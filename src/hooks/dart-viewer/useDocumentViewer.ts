@@ -1,0 +1,271 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { mockDocumentData, getSectionKeyFromId, findSectionById } from "../../lib/dart-viewer/dartViewerHelpers";
+import type { VersionInfo, TemplateData } from "../../types/dartViewer";
+import { dartViewerApi } from "../../api/dartViewerApi";
+import { loadFullProjectState, getVersionSections, createNewVersion } from "../../service/dartViewerService";
+
+export function useDocumentViewer(userId: number) {
+  // Template data from sessionStorage (MainPage에서 생성된 데이터)
+  const [templateData, setTemplateData] = useState<TemplateData | null>(null);
+  const [isTemplateLoading, setIsTemplateLoading] = useState(true);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
+  // Load template data from sessionStorage
+  useEffect(() => {
+    const loadTemplateData = () => {
+      try {
+        setIsTemplateLoading(true);
+        const storedData = sessionStorage.getItem('securitiesTemplateData');
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          console.log('🎯 [useDocumentViewer] 템플릿 데이터 로드 성공:', parsedData);
+          setTemplateData(parsedData);
+          setTemplateError(null);
+        } else {
+          console.log('📝 [useDocumentViewer] sessionStorage에 템플릿 데이터 없음');
+          setTemplateData(null);
+          setTemplateError('템플릿 데이터가 없습니다. 메인 페이지에서 먼저 증권신고서를 생성해주세요.');
+        }
+      } catch (error: any) {
+        console.error('❌ [useDocumentViewer] 템플릿 데이터 로드 오류:', error);
+        setTemplateData(null);
+        setTemplateError(error.message || '템플릿 데이터 로드 실패');
+      } finally {
+        setIsTemplateLoading(false);
+      }
+    };
+
+    loadTemplateData();
+  }, []);
+
+  // State
+  const [selectedSection, setSelectedSection] = useState<string>(() => {
+    const saved = localStorage.getItem("selectedSection");
+    return saved ?? "1";
+  });
+
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState("v0");
+  const [versions, setVersions] = useState<VersionInfo[]>([]);
+  const [modifiedSections, setModifiedSections] = useState<Set<string>>(new Set());
+  const [isCreatingVersion, setIsCreatingVersion] = useState(false);
+  const [currentSectionHTML, setCurrentSectionHTML] = useState<string>("");
+  const [isLoadingSection, setIsLoadingSection] = useState(false);
+  const [versionSectionsData, setVersionSectionsData] = useState<Record<string, string>>({});
+  // Section-specific data cache to handle same sectionKey sections
+  const [sectionSpecificData, setSectionSpecificData] = useState<Record<string, string>>({});
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(["3", "6", "7", "14", "21", "22", "28", "36", "47", "50", "55", "60", "66"])
+  );
+
+  // Save selected section
+  useEffect(() => {
+    if (selectedSection) {
+      localStorage.setItem("selectedSection", selectedSection);
+    }
+  }, [selectedSection]);
+
+  // Load initial project state
+  useEffect(() => {
+    const loadProjectState = async () => {
+      try {
+        const state = await loadFullProjectState(userId);
+        setCurrentVersion(state.currentVersion);
+        setVersions(state.versions);
+        setModifiedSections(state.modifiedSections);
+        setVersionSectionsData(state.sectionsData);
+        setSectionSpecificData({}); // Initialize section-specific cache
+      } catch (error) {
+        console.error("프로젝트 상태 로드 오류:", error);
+      }
+    };
+
+    loadProjectState();
+  }, [userId]);
+
+  // Sync current section HTML with section-specific data priority
+  useEffect(() => {
+    if (!selectedSection || !versionSectionsData) return;
+
+    const sectionKey = getSectionKeyFromId(selectedSection);
+    const sectionSpecificKey = `${sectionKey}-${selectedSection}`;
+    
+    // Check section-specific data first, then fall back to general section data
+    const htmlContent = sectionSpecificData[sectionSpecificKey] ?? versionSectionsData[sectionKey] ?? "";
+    setCurrentSectionHTML(htmlContent);
+  }, [selectedSection, versionSectionsData, sectionSpecificData]);
+
+  const currentSection = useMemo(
+    () => findSectionById(mockDocumentData, selectedSection),
+    [selectedSection]
+  );
+
+  const toggleLeftPanel = () => setIsLeftPanelCollapsed((prev) => !prev);
+
+  const handleSectionModified = useCallback(async (sectionId: string, updatedHTML: string) => {
+    const newModifiedSections = new Set([...modifiedSections, sectionId]);
+    setModifiedSections(newModifiedSections);
+
+    try {
+      await dartViewerApi.patchEditingVersion({ 
+        user_id: userId, 
+        modifiedSections: Array.from(newModifiedSections) 
+      });
+      
+      const sectionKey = getSectionKeyFromId(sectionId);
+      const sectionSpecificKey = `${sectionKey}-${sectionId}`;
+      
+      // Store in section-specific data to avoid conflicts
+      setSectionSpecificData((prev) => ({ 
+        ...prev, 
+        [sectionSpecificKey]: updatedHTML 
+      }));
+      
+      // Also update the general section data for consistency
+      setVersionSectionsData((prev) => ({ ...prev, [sectionKey]: updatedHTML }));
+
+      if (sectionId === selectedSection) {
+        setCurrentSectionHTML(updatedHTML);
+      }
+    } catch (error) {
+      console.error("섹션 상태 업데이트 오류:", error);
+      // Revert the modified sections on error
+      setModifiedSections(modifiedSections);
+    }
+  }, [userId, modifiedSections, selectedSection]);
+
+  const handleCreateNewVersion = useCallback(async () => {
+    if (modifiedSections.size === 0) {
+      alert("수정된 섹션이 없습니다.");
+      return;
+    }
+    
+    setIsCreatingVersion(true);
+    
+    try {
+      const description = prompt("새 버전에 대한 설명을 입력하세요:");
+      if (description === null) {
+        setIsCreatingVersion(false);
+        return; // User cancelled
+      }
+      
+      const result = await createNewVersion(userId, description || undefined);
+
+      if (result.success) {
+        localStorage.removeItem("selectedSection");
+        
+        // Reload state and clear section-specific cache
+        const state = await loadFullProjectState(userId);
+        setCurrentVersion(state.currentVersion);
+        setModifiedSections(state.modifiedSections);
+        setVersions(state.versions);
+        setVersionSectionsData(state.sectionsData);
+        setSectionSpecificData({}); // Clear section-specific cache
+
+        alert(result.message);
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        alert(result.message);
+        setIsCreatingVersion(false);
+      }
+    } catch (error) {
+      console.error("새 버전 생성 오류:", error);
+      alert("새 버전 생성 중 오류가 발생했습니다.");
+      setIsCreatingVersion(false);
+    }
+  }, [modifiedSections, userId]);
+
+  const handleDeleteEditingVersion = useCallback(async () => {
+    if (!window.confirm("편집중인 버전을 삭제하시겠습니까?")) return;
+    
+    try {
+      await dartViewerApi.deleteEditingVersion(userId);
+      alert("삭제가 완료되었습니다!");
+      localStorage.removeItem("selectedSection");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err: any) {
+      console.error(err);
+      const errorMessage = err.response?.data?.message || err.message || "삭제 중 오류가 발생했습니다.";
+      alert(errorMessage);
+    }
+  }, [userId]);
+
+  const handleSwitchVersion = useCallback(async (version: string) => {
+    if (version === currentVersion) return;
+    
+    if (modifiedSections.size > 0) {
+      const confirm = window.confirm("저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?");
+      if (!confirm) return;
+    }
+    
+    setIsLoadingSection(true);
+    
+    try {
+      // 전체 프로젝트 상태를 다시 로드하여 정확한 modifiedSections를 가져옴
+      const fullState = await loadFullProjectState(userId);
+      
+      // 섹션 데이터 로드
+      const sectionsData = await getVersionSections(version, userId);
+      
+      // 모든 상태를 한번에 업데이트하여 렌더링 최적화
+      setCurrentVersion(version);
+      setVersions(fullState.versions);
+      setVersionSectionsData(sectionsData);
+      setSectionSpecificData({}); // Clear section-specific cache when switching versions
+      
+      // 버전에 따라 적절한 modifiedSections 설정
+      if (version === 'editing') {
+        setModifiedSections(fullState.modifiedSections);
+      } else {
+        setModifiedSections(new Set());
+      }
+
+      // Update current section HTML
+      const selectedSectionKey = getSectionKeyFromId(selectedSection);
+      if (selectedSectionKey && sectionsData[selectedSectionKey]) {
+        setCurrentSectionHTML(sectionsData[selectedSectionKey]);
+      } else {
+        setCurrentSectionHTML("");
+      }
+    } catch (error) {
+      console.error("버전 전환 오류:", error);
+      alert("버전 전환 중 오류가 발생했습니다.");
+      // Don't change version on error
+    } finally {
+      setIsLoadingSection(false);
+    }
+  }, [userId, modifiedSections, selectedSection, currentVersion]);
+
+  return {
+    // Section state
+    selectedSection,
+    setSelectedSection,
+    currentSectionHTML,
+    expandedSections,
+    setExpandedSections,
+    currentSection,
+    
+    // Version state
+    currentVersion,
+    versions,
+    modifiedSections,
+    versionSectionsData,
+    
+    // UI state
+    isLeftPanelCollapsed,
+    toggleLeftPanel,
+    isCreatingVersion,
+    isLoadingSection,
+    
+    // Template data
+    templateData,
+    isTemplateLoading,
+    templateError,
+    
+    // Actions
+    handleSectionModified,
+    handleCreateNewVersion,
+    handleDeleteEditingVersion,
+    handleSwitchVersion,
+  };
+}

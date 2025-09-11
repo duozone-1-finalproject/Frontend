@@ -1,11 +1,8 @@
-export interface DocumentSection {
-  id: string
-  title: string
-  sectionKey: string  // htmlFile → sectionKey로 변경 (DB의 section1, section2 등과 매핑)
-  type: 'part' | 'section-1' | 'section-2'
-  sectionName?: string
-  children?: DocumentSection[]
-}
+import { DocumentSection } from "../../types/dartViewer";
+import prettier from "prettier/standalone";
+import parserHtml from "prettier/plugins/html";
+import { PayloadOptions } from "../../types/dartViewer";
+import { TemplateData } from "../../types/dartViewer";
 
 export const mockDocumentData: DocumentSection[] = [
   {
@@ -493,20 +490,144 @@ export const mockDocumentData: DocumentSection[] = [
   }
 ]
 
-// DB 섹션 키를 섹션 ID로 변환하는 헬퍼 함수
-export function getSectionKeyFromId(id: string): string {
-  const section = findSectionById(mockDocumentData, id)
-  return section?.sectionKey || 'section1'
+
+const SECTION_FILES = [
+  "section-1.html",
+  "section-2.html",
+  "section-3.html",
+  "section-4.html",
+  "section-5.html",
+  "section-6.html",
+] as const;
+
+export async function initializeData(): Promise<Record<string, string>> {
+  const sectionsData: Record<string, string> = {};
+
+  for (let i = 0; i < SECTION_FILES.length; i++) {
+    const res = await fetch(`/initialTemplate/${SECTION_FILES[i]}`);
+    sectionsData[`section${i + 1}`] = await res.text();
+  }
+
+  return sectionsData;
 }
 
-// 섹션 ID로 섹션 찾기 (재귀)
+
+/**
+ * DB 섹션 키를 섹션 ID로 변환하는 헬퍼 함수
+ */
+export function getSectionKeyFromId(id: string): string {
+  const section = findSectionById(mockDocumentData, id);
+  return section?.sectionKey || 'section1';
+}
+
+/**
+ * 섹션 ID로 섹션 찾기 (재귀)
+ */
 export function findSectionById(sections: DocumentSection[], id: string): DocumentSection | null {
   for (const section of sections) {
-    if (section.id === id) return section
+    if (section.id === id) return section;
     if (section.children) {
-      const found = findSectionById(section.children, id)
-      if (found) return found
+      const found = findSectionById(section.children, id);
+      if (found) return found;
     }
   }
-  return null
+  return null;
+}
+
+/**
+ * 섹션이 최하위 섹션(children이 없는 섹션)인지 확인
+ */
+export function isLeafSection(section: DocumentSection | null): boolean {
+  return section ? !section.children || section.children.length === 0 : false;
+}
+
+
+/**
+ * API 요청용 페이로드 생성 함수
+ */
+export function createPayload(options: PayloadOptions): Record<string, unknown> {
+  const {
+    user_id,
+    version,
+    version_number,
+    description = "편집중인 버전",
+    sectionsData,
+    createdAt = new Date().toISOString(),
+  } = options;
+
+  const payload: Record<string, unknown> = {
+    user_id,
+    description,
+    createdAt,
+  };
+
+  if (version !== undefined) payload.version = version;
+  if (version_number !== undefined) payload.version_number = version_number;
+  if (sectionsData !== undefined) payload.sectionsData = sectionsData;
+
+  return payload;
+}
+
+
+/**
+ * 템플릿에 데이터를 채우는 헬퍼 함수
+ */
+export const fillTemplate = (template: string, data: TemplateData): string => {
+  let result = template;
+  for (const [key, value] of Object.entries(data)) {
+    const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+    const fillValue = value ?? '';
+    result = result.replace(placeholder, fillValue);
+  }
+  return result;
+};
+
+/**
+ * iframe을 읽기 전용 모드로 설정하는 헬퍼 함수
+ */
+export const ensureReadOnlyMode = (iframeDoc: Document) => {
+  const body = iframeDoc.body;
+  if (!body) return;
+  
+  body.contentEditable = 'false';
+  body.style.outline = 'none';
+  body.style.outlineOffset = '0';
+  
+  const existingStyles = iframeDoc.querySelectorAll('style');
+  existingStyles.forEach(style => {
+    if (style.textContent?.includes('contenteditable')) {
+      style.remove();
+    }
+  });
+};
+
+/**
+ * HTML 병합 및 포맷팅 함수
+ */
+export async function mergeAndFormatSection(
+  originalHtml: string, 
+  sectionType: string, 
+  sectionName: string, 
+  updatedHtml: string
+): Promise<string | null> {
+  try {
+    const updatedDoc = new DOMParser().parseFromString(updatedHtml, "text/html");
+    const updatedSection = updatedDoc.querySelector(`.${sectionType}[data-section="${sectionName}"]`);
+    if (!updatedSection) return null;
+
+    const originalDoc = new DOMParser().parseFromString(originalHtml, "text/html");
+    const originalSection = originalDoc.querySelector(`.${sectionType}[data-section="${sectionName}"]`);
+    if (!originalSection) return null;
+
+    originalSection.outerHTML = updatedSection.outerHTML;
+    const finalHtml = `<!DOCTYPE html>\n${originalDoc.documentElement.outerHTML}`;
+    
+    return await prettier.format(finalHtml, { 
+      parser: "html", 
+      plugins: [parserHtml] 
+    });
+  } catch (error) {
+    console.error('HTML 병합 및 포맷팅 오류:', error);
+    return null;
+  }
 }
