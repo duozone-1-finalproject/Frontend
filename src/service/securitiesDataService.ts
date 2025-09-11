@@ -199,7 +199,7 @@ export class SecuritiesDataService {
 
 // 3. 전체 프로세스 실행 (메인페이지에서 호출할 함수)
 static async generateSecuritiesData(
-    companyCode: string = '01571107',
+    companyCode: string = '01111111',
     onProgress?: (step: string, progress: number) => void
   ) {
     try {

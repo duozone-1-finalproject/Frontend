@@ -1,16 +1,21 @@
 // pages/MainPage.tsx
-import React, { useState } from 'react';
+import React, { useState, ReactNode, useEffect } from 'react';
 import { Calendar, User, FileText, Settings, ChevronRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom'; // React Router import 수정
 import { useRequireAuth } from '../hooks/auth/useAuth';
 import { useMainPage } from '../hooks/pages/useMainPage';
 import { useMyPage } from '../hooks/pages/useMyPage';
 import { SecuritiesDataService } from '../service/securitiesDataService';
-
+// 기업 선택용 모달
+import {CompanySearchModal} from '../components/main/Modal';
 interface GenerationProgress {
   step: string;
   progress: number;
 }
+
+
+
+
 
 const MainPage: React.FC = () => {
   // 인증 확인
@@ -26,11 +31,14 @@ const MainPage: React.FC = () => {
   } = useMainPage();
 
   const { getEventsForDate } = useMyPage();
-  
+
   // 오늘 일정 가져오기
   const today = new Date();
   const todayEvents = getEventsForDate(today);
-  
+
+  // 모달 열기
+  const [showModal, setShowModal] = useState(false);
+
   const [showTodaySchedule, setShowTodaySchedule] = useState(false);
   
   // 초안 생성 관련 상태
@@ -44,7 +52,7 @@ const MainPage: React.FC = () => {
   };
 
   // 증권신고서 초안 생성 핸들러
-  const handleGenerateSecurities = async () => {
+  const handleGenerateSecurities = async (companyCode: string) => {
     try {
       setIsGenerating(true);
       setGenerationProgress({ step: '초기화 중...', progress: 0 });
@@ -52,7 +60,7 @@ const MainPage: React.FC = () => {
       console.log("🚀 [MainPage] 증권신고서 생성 시작");
       
       const result = await SecuritiesDataService.generateSecuritiesData(
-        '01571107', // 기본 회사 코드
+        companyCode, // 기본 회사 코드
         (step: string, progress: number) => {
           setGenerationProgress({ step, progress });
           console.log(`📊 [Progress] ${step}: ${progress}%`);
@@ -104,21 +112,21 @@ const handleGoToViewer = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo Section */}
             <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  {/* KM Logo */}
-                  <img 
-                    src="/img/mainlogo.png" 
-                    alt=" ComAIng 로고" 
-                    className="w-20 h-20 object-contain"
-                  />
-                  {/* ComAIng Text */}
-                  <span className="text-2xl font-semibold tracking-tight text-gray-900" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>ComAIng</span>
+              <div className="flex items-center space-x-2">
+                {/* KM Logo */}
+                <img
+                  src="/img/mainlogo.png"
+                  alt=" ComAIng 로고"
+                  className="w-20 h-20 object-contain"
+                />
+                {/* ComAIng Text */}
+                <span className="text-2xl font-semibold tracking-tight text-gray-900" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>ComAIng</span>
               </div>
             </div>
-            
+
             {/* Navigation */}
             <nav className="flex items-center space-x-8">
-              <button 
+              <button
                 onClick={handleTodayScheduleClick}
                 className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
               >
@@ -129,15 +137,15 @@ const handleGoToViewer = () => {
                   </span>
                 )}
               </button>
-              
+
               <div className="relative">
-                <button 
+                <button
                   onClick={handleProfileClick}
                   className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
                 >
                   <User className="w-5 h-5" />
                 </button>
-                
+
                 {/* User Menu Dropdown */}
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
@@ -289,25 +297,21 @@ const handleGoToViewer = () => {
                 <br />
                 증권신고서 초안
                 <br />
-                 AI 자동생성
+                AI 자동생성
               </h1>
-              
+
               {/* Description */}
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                복잡한 증권신고서 초안 작성을 돕습니다. 
-                AI 기반 자동 생성 시스템으로 정확하고 효율적인 증권신고서 초안을 
+                복잡한 증권신고서 초안 작성을 돕습니다.
+                AI 기반 자동 생성 시스템으로 정확하고 효율적인 증권신고서 초안을
                 빠르게 작성하고, 오류 검토까지 한 번에 완료합니다.
               </p>
-              
+
               {/* CTA Button */}
-              <button 
-                onClick={handleGenerateSecurities}
-                disabled={isGenerating}
-                className={`inline-flex items-center px-8 py-4 font-semibold rounded-lg transition-all duration-200 transform shadow-lg ${
-                  isGenerating 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-xl'
-                } text-white`}
+              <button
+                // onClick={handleSecurityClick}
+                onClick={() => setShowModal(true)}
+                className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 {isGenerating ? (
                   <>
@@ -321,9 +325,17 @@ const handleGoToViewer = () => {
                   </>
                 )}
               </button>
+              <CompanySearchModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSelectCompany={(corpCode: string) => {
+                  setShowModal(false);
+                  handleGenerateSecurities(corpCode);
+                }}
+              />
             </div>
           </div>
-          
+
           {/* Right Content - Document Preview */}
           <div className="flex-1">
             <div className="relative">
@@ -337,19 +349,19 @@ const handleGoToViewer = () => {
                     <span className="ml-4 text-sm text-gray-600">증권신고서 초안.docx</span>
                   </div>
                 </div>
-                
+
                 <div className="p-6 space-y-4">
                   <div className="text-center">
                     <h3 className="text-lg font-bold text-gray-900">증권신고서</h3>
                     <p className="text-sm text-gray-600 mt-1">(주식회사 컴맹테크)</p>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="h-2 bg-gray-200 rounded"></div>
                     <div className="h-2 bg-gray-200 rounded w-4/5"></div>
                     <div className="h-2 bg-gray-200 rounded w-3/4"></div>
                     <div className="h-2 bg-gray-200 rounded w-5/6"></div>
-                    
+
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
                       <div className="flex items-center">
                         <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
@@ -359,7 +371,7 @@ const handleGoToViewer = () => {
                         법적 요구사항 98% 충족, 추가 검토 권장 사항 2건
                       </p>
                     </div>
-                    
+
                     <div className="space-y-2 mt-4">
                       <div className="h-2 bg-gray-200 rounded w-full"></div>
                       <div className="h-2 bg-gray-200 rounded w-2/3"></div>
@@ -368,12 +380,11 @@ const handleGoToViewer = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Floating Elements */}
               <div className="absolute -top-4 -left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                 자동생성 완료
               </div>
-              
               <div className="absolute -bottom-4 -right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                 검토 완료
               </div>
@@ -384,5 +395,7 @@ const handleGoToViewer = () => {
     </div>
   );
 };
+
+
 
 export default MainPage;
