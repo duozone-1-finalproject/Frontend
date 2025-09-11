@@ -6,15 +6,14 @@ import { useRequireAuth } from '../hooks/auth/useAuth';
 import { useMainPage } from '../hooks/pages/useMainPage';
 import { useMyPage } from '../hooks/pages/useMyPage';
 import { SecuritiesDataService } from '../service/securitiesDataService';
-
+// 기업 선택용 모달
+import {CompanySearchModal} from '../components/main/Modal';
 interface GenerationProgress {
   step: string;
   progress: number;
 }
 
-import { X } from 'lucide-react';
 
-import {CompanySearchModal} from '../components/main/Modal';
 
 
 
