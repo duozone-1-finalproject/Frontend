@@ -1,21 +1,28 @@
-// pages/MainPage.tsx (새로운 디자인)
+// pages/MainPage.tsx
 import React, { useState } from 'react';
-import { Calendar, User, FileText, Settings, ChevronRight } from 'lucide-react';
+import { Calendar, User, FileText, Settings, ChevronRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // React Router import 수정
 import { useRequireAuth } from '../hooks/auth/useAuth';
 import { useMainPage } from '../hooks/pages/useMainPage';
 import { useMyPage } from '../hooks/pages/useMyPage';
+import { SecuritiesDataService } from '../service/securitiesDataService';
+
+interface GenerationProgress {
+  step: string;
+  progress: number;
+}
 
 const MainPage: React.FC = () => {
   // 인증 확인
   useRequireAuth('/');
+  const navigate = useNavigate(); // useNavigate hook 사용
 
   const {
     user,
     showUserMenu,
     handleProfileClick,
     handleMyPageClick,
-    handleLogoutClick,
-    handleSecurityClick
+    handleLogoutClick
   } = useMainPage();
 
   const { getEventsForDate } = useMyPage();
@@ -26,9 +33,67 @@ const MainPage: React.FC = () => {
   
   const [showTodaySchedule, setShowTodaySchedule] = useState(false);
   
+  // 초안 생성 관련 상태
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({ step: '', progress: 0 });
+  const [generatedData, setGeneratedData] = useState<Record<string, any> | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  
   const handleTodayScheduleClick = () => {
     setShowTodaySchedule(!showTodaySchedule);
   };
+
+  // 증권신고서 초안 생성 핸들러
+  const handleGenerateSecurities = async () => {
+    try {
+      setIsGenerating(true);
+      setGenerationProgress({ step: '초기화 중...', progress: 0 });
+      
+      console.log("🚀 [MainPage] 증권신고서 생성 시작");
+      
+      const result = await SecuritiesDataService.generateSecuritiesData(
+        '01571107', // 기본 회사 코드
+        (step: string, progress: number) => {
+          setGenerationProgress({ step, progress });
+          console.log(`📊 [Progress] ${step}: ${progress}%`);
+        }
+      );
+      
+      if (result.success && result.data) {
+        setGeneratedData(result.data);
+        setShowResultModal(true);
+        console.log("✅ [MainPage] 데이터 생성 완료:", result.data);
+      } else {
+        throw new Error(result.error || "데이터 생성 실패");
+      }
+      
+    } catch (error: any) {
+      console.error("❌ [MainPage] 증권신고서 생성 실패:", error);
+      alert(`증권신고서 생성 중 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress({ step: '', progress: 0 });
+    }
+  };
+// 결과 확인 후 다트뷰어로 이동
+const handleGoToViewer = () => {
+  if (generatedData) {
+    try {
+      // 세션스토리지에 잘 들어갔는지 확인
+      const stored = sessionStorage.getItem('securitiesTemplateData');
+      if (!stored) {
+        console.warn("⚠️ sessionStorage에 데이터 없음 → 강제 저장");
+        sessionStorage.setItem('securitiesTemplateData', JSON.stringify(generatedData));
+      }
+    } catch (err) {
+      console.error("⚠️ sessionStorage 저장 실패, 강제 복구 시도:", err);
+      sessionStorage.setItem('securitiesTemplateData', JSON.stringify(generatedData));
+    }
+
+    // 이제 확실히 저장된 상태에서만 이동
+    navigate('/dartviewer');
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -137,6 +202,80 @@ const MainPage: React.FC = () => {
         </div>
       )}
 
+      {/* Generation Progress Modal */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">증권신고서 생성 중</h3>
+                <p className="text-sm text-gray-600 mb-4">{generationProgress.step}</p>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${generationProgress.progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500">{generationProgress.progress}% 완료</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generation Result Modal */}
+      {showResultModal && generatedData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">생성 완료</h3>
+              <button
+                onClick={() => setShowResultModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">증권신고서 초안이 생성되었습니다</h4>
+                <p className="text-gray-600 mb-2">
+                  회사명: {generatedData.company_name || '정보 없음'}
+                </p>
+                <p className="text-gray-600 mb-6">
+                  CEO: {generatedData.ceo_name || '정보 없음'}
+                </p>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowResultModal(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    닫기
+                  </button>
+                  <button
+                    onClick={handleGoToViewer}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    편집기로 이동
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center min-h-[calc(100vh-4rem)]">
@@ -161,11 +300,25 @@ const MainPage: React.FC = () => {
               
               {/* CTA Button */}
               <button 
-                onClick={handleSecurityClick}
-                className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                onClick={handleGenerateSecurities}
+                disabled={isGenerating}
+                className={`inline-flex items-center px-8 py-4 font-semibold rounded-lg transition-all duration-200 transform shadow-lg ${
+                  isGenerating 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-xl'
+                } text-white`}
               >
-                <span>증권신고서 초안 생성</span>
-                <ChevronRight className="ml-2 w-5 h-5" />
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                    <span>생성 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>증권신고서 초안 생성</span>
+                    <ChevronRight className="ml-2 w-5 h-5" />
+                  </>
+                )}
               </button>
             </div>
           </div>

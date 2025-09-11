@@ -15,7 +15,6 @@ import { mockDocumentData, getSectionKeyFromId, findSectionById } from '../../da
 import React from 'react'
 import axios from '../../api/axios'
 
-
 export function DocumentViewer() {
   const navigate = useNavigate()
 
@@ -35,6 +34,30 @@ export function DocumentViewer() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['3', '6', '7', '14', '21', '22', '28', '36', '47', '50', '55', '60', '66'])
   )
+
+  // 🔥 추가: 템플릿 데이터 상태
+  const [templateData, setTemplateData] = useState<Record<string, any> | null>(null)
+
+  // 🔥 추가: sessionStorage에서 템플릿 데이터 로드
+  useEffect(() => {
+    const loadTemplateData = () => {
+      try {
+        const storedData = sessionStorage.getItem('securitiesTemplateData')
+        if (storedData) {
+          const parsedData = JSON.parse(storedData)
+          console.log('🎯 [DocumentViewer] 템플릿 데이터 로드 성공:', parsedData)
+          setTemplateData(parsedData)
+        } else {
+          console.log('📝 [DocumentViewer] sessionStorage에 템플릿 데이터 없음')
+        }
+      } catch (error) {
+        console.error('❌ [DocumentViewer] 템플릿 데이터 로드 오류:', error)
+        setTemplateData(null)
+      }
+    }
+
+    loadTemplateData()
+  }, [])
 
   useEffect(() => {
     if (selectedSection) {
@@ -66,7 +89,6 @@ export function DocumentViewer() {
     const sectionKey = getSectionKeyFromId(selectedSection)
     setCurrentSectionHTML(versionSectionsData[sectionKey] ?? "")
   }, [selectedSection, versionSectionsData])
-
 
   const currentSection = useMemo(
     () => findSectionById(mockDocumentData, selectedSection),
@@ -236,6 +258,7 @@ export function DocumentViewer() {
             ({modifiedSections.size}개 섹션이 수정됨)
           </span>
         )}
+       
       </div>
 
       {/* Main Content */}
@@ -250,7 +273,7 @@ export function DocumentViewer() {
           {!isLeftPanelCollapsed && (
             <div className="h-full flex flex-col">
               <div className="bg-blue-100 p-3 border-b text-center">
-                <h3 className="font-semibold text-blue-800">📑 문서 목차</h3>
+                <h3 className="font-semibold text-blue-800">📋 문서 목차</h3>
               </div>
               <div className="flex-1 overflow-auto">
                 <TableOfContents
@@ -296,6 +319,7 @@ export function DocumentViewer() {
               sectionType={currentSection?.type}
               onSectionModified={handleSectionModified}
               modifiedSections={modifiedSections}
+              templateData={templateData} // 🔥 추가: 템플릿 데이터 전달
             />
           )}
         </div>
