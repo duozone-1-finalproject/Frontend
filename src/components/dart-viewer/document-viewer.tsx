@@ -1,203 +1,36 @@
-import { useState, useEffect, useMemo } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Loader2, Plus, Home } from 'lucide-react'
 import { Button } from './ui/button'
 import { TableOfContents } from './table-of-contents'
 import { DocumentContent } from './document-content'
 import { VersionSelector } from './version-selector'
-import {
-  createNewVersion,
-  getVersionSections,
-  loadFullProjectState,
-  type VersionInfo
-} from '../../lib/dart-viewer/version-actions'
-import { mockDocumentData, getSectionKeyFromId, findSectionById } from '../../data/dart-viewer/mockDocumentData'
-import React from 'react'
-import axios from '../../api/axios'
+import { useDocumentViewer } from '../../hooks/dart-viewer/useDocumentViewer'
+import { mockDocumentData } from '../../lib/dart-viewer/dartViewerHelpers'
 
 export function DocumentViewer() {
   const navigate = useNavigate()
-
-  const [selectedSection, setSelectedSection] = useState<string>(() => {
-    const saved = localStorage.getItem("selectedSection")
-    return saved ?? "1"
-  })
-
-  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
-  const [currentVersion, setCurrentVersion] = useState('v0')
-  const [versions, setVersions] = useState<VersionInfo[]>([])
-  const [modifiedSections, setModifiedSections] = useState<Set<string>>(new Set())
-  const [isCreatingVersion, setIsCreatingVersion] = useState(false)
-  const [currentSectionHTML, setCurrentSectionHTML] = useState<string>('')
-  const [isLoadingSection, setIsLoadingSection] = useState(false)
-  const [versionSectionsData, setVersionSectionsData] = useState<Record<string, string>>({})
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['3', '6', '7', '14', '21', '22', '28', '36', '47', '50', '55', '60', '66'])
-  )
-
-  // 🔥 추가: 템플릿 데이터 상태
-  const [templateData, setTemplateData] = useState<Record<string, any> | null>(null)
-
-  // 🔥 추가: sessionStorage에서 템플릿 데이터 로드
-  useEffect(() => {
-    const loadTemplateData = () => {
-      try {
-        const storedData = sessionStorage.getItem('securitiesTemplateData')
-        if (storedData) {
-          const parsedData = JSON.parse(storedData)
-          console.log('🎯 [DocumentViewer] 템플릿 데이터 로드 성공:', parsedData)
-          setTemplateData(parsedData)
-        } else {
-          console.log('📝 [DocumentViewer] sessionStorage에 템플릿 데이터 없음')
-        }
-      } catch (error) {
-        console.error('❌ [DocumentViewer] 템플릿 데이터 로드 오류:', error)
-        setTemplateData(null)
-      }
-    }
-
-    loadTemplateData()
-  }, [])
-
-  useEffect(() => {
-    if (selectedSection) {
-      localStorage.setItem('selectedSection', selectedSection)
-    }
-  })
-
-  useEffect(() => {
-    const loadProjectState = async () => {
-      try {
-        const token = localStorage.getItem("accessToken");
-        const state = await loadFullProjectState(123456, token);
-
-        setCurrentVersion(state.currentVersion)
-        setVersions(state.versions)
-        setModifiedSections(state.modifiedSections)
-        setVersionSectionsData(state.sectionsData)
-      } catch (error) {
-        console.error('프로젝트 상태 로드 오류:', error)
-      }
-    }
-    
-    loadProjectState()
-  }, [])
-
-  useEffect(() => {
-    if (!selectedSection || !versionSectionsData) return
-
-    const sectionKey = getSectionKeyFromId(selectedSection)
-    setCurrentSectionHTML(versionSectionsData[sectionKey] ?? "")
-  }, [selectedSection, versionSectionsData])
-
-  const currentSection = useMemo(
-    () => findSectionById(mockDocumentData, selectedSection),
-    [selectedSection]
-  )
-
-  const toggleLeftPanel = () => {
-    setIsLeftPanelCollapsed(!isLeftPanelCollapsed)
-  }
-
-  const handleSectionModified = async (sectionId: string, updatedHTML: string) => {
-    const newModifiedSections = new Set([...modifiedSections, sectionId])
-    setModifiedSections(newModifiedSections)
-
-    try {
-      await axios.patch('/api/versions/editing', {
-        user_id: 123456,
-        modifiedSections: Array.from(newModifiedSections)
-      })
-    } catch (error) {
-      console.error("수정된 섹션 상태 업데이트 오류:", error);
-    }
-
-    const sectionKey = getSectionKeyFromId(sectionId)
-    setVersionSectionsData(prev => ({ ...prev, [sectionKey]: updatedHTML }))
-
-    if (sectionId === selectedSection) {
-      setCurrentSectionHTML(updatedHTML)
-    }
-  }
-
-  const handleCreateNewVersion = async () => {
-    if (modifiedSections.size === 0) {
-      alert('수정된 섹션이 없습니다.')
-      return
-    }
-    setIsCreatingVersion(true)
-    try {
-      const description = prompt('새 버전에 대한 설명을 입력하세요:')
-      const token = localStorage.getItem("accessToken"); 
-      const result = await createNewVersion(123456, description || undefined, token); 
-      
-      if (result.success) {
-        localStorage.removeItem('selectedSection')
-        
-        const state = await loadFullProjectState(123456, token);
-        setCurrentVersion(state.currentVersion)
-        setModifiedSections(state.modifiedSections)
-        setVersions(state.versions)
-        setVersionSectionsData(state.sectionsData)
-
-        alert(result.message)
-      } else {
-        alert(result.message)
-      }
-    } catch (error) {
-      console.error('새 버전 생성 오류:', error)
-      alert('새 버전 생성 중 오류가 발생했습니다.')
-    } finally {
-      setIsCreatingVersion(false)
-      window.location.reload();
-    }
-  }
-
-  const handleDeleteEditingVersion = async () => {
-    if (!window.confirm("편집중인 버전을 삭제하시겠습니까?")) return;
-    try {
-      const response = await axios.delete("/api/versions/editing", {
-        data: {
-          user_id: 123456,
-        }
-      });
-      alert(response.data);
-      localStorage.removeItem("selectedSection");
-      window.location.reload();
-    } catch (err: any) {
-      console.error(err);
-      const errorMessage = err.response?.data || "삭제 중 오류가 발생했습니다.";
-      alert(errorMessage);
-    }
-  }
-
-  const handleSwitchVersion = async (version: string) => {
-    if (version === currentVersion) return
-    if (modifiedSections.size > 0) {
-      const confirm = window.confirm('저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?')
-      if (!confirm) return
-    }
-    setIsLoadingSection(true)
-    try {
-      setCurrentVersion(version)
-      setModifiedSections(new Set())
-
-      const token = localStorage.getItem("accessToken"); 
-      const sectionsData = await getVersionSections(version, 123456, token);
-      setVersionSectionsData(sectionsData)
-
-      const selectedSectionKey = getSectionKeyFromId(selectedSection)
-      if (selectedSectionKey && sectionsData[selectedSectionKey]) {
-        setCurrentSectionHTML(sectionsData[selectedSectionKey])
-      }
-
-    } catch (error) {
-      console.error('버전 전환 오류:', error)
-      alert('버전 전환 중 오류가 발생했습니다.')
-    } finally {
-      setIsLoadingSection(false)
-    }
-  }
+  
+  const {
+    selectedSection,
+    setSelectedSection,
+    currentSectionHTML,
+    expandedSections,
+    setExpandedSections,
+    currentSection,
+    currentVersion,
+    versions,
+    modifiedSections,
+    isLeftPanelCollapsed,
+    toggleLeftPanel,
+    isCreatingVersion,
+    isLoadingSection,
+    templateData,
+    handleSectionModified,
+    handleCreateNewVersion,
+    handleDeleteEditingVersion,
+    handleSwitchVersion,
+  } = useDocumentViewer(123456)
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -318,8 +151,10 @@ export function DocumentViewer() {
               sectionName={currentSection?.sectionName}
               sectionType={currentSection?.type}
               onSectionModified={handleSectionModified}
-              modifiedSections={modifiedSections}
-              templateData={templateData} // 🔥 추가: 템플릿 데이터 전달
+              templateData={templateData}
+              onValidateSection={(sectionId, htmlContent) => {
+                console.log('섹션 검증 완료:', sectionId, htmlContent.length);
+              }}
             />
           )}
         </div>

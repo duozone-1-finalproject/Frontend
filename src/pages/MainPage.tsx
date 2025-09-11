@@ -58,6 +58,7 @@ const MainPage: React.FC = () => {
           console.log(`📊 [Progress] ${step}: ${progress}%`);
         }
       );
+      console.log("result.data: ", result.data)
       
       if (result.success && result.data) {
         setGeneratedData(result.data);

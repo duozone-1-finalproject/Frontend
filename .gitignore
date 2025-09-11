@@ -199,3 +199,8 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+
+# claude 관련 폴더 제거
+.claude/
+**/.claude/
