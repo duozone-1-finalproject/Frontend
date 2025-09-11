@@ -81,10 +81,22 @@ interface CompanyListProps {
 
 const CompanyList: React.FC<CompanyListProps> = ({ companies, isLoading, onSelectCompany }) => {
 
+  const test = (corpCode: string) => {
+    const val= fetch(`http://localhost:8080/api/v1/variables/mapping/${corpCode}`)
+        .then(res => res.json())
+        .then(data => console.log("데이터 확인해보기"+(data.content || data.companies || [])))
+        .catch(error => {
+          console.error("Error fetching companies:", error);
+        })
+        .finally(() => console.log('끝'));
+        console.log("val"+val);
+  } 
+
   const handleSelectCompany = (company: Company) => {
-  // window.confirm이 true(예)를 반환하면 asd 함수 실행
   if (window.confirm(`'${company.corpName}'을(를 선택하시겠습니까?`)) {
+    test(company.corpCode);
     onSelectCompany(company.corpCode);
+
   }
   };
 
