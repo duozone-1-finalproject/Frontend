@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { X } from 'lucide-react';
-import axios from '../../api/axios';
+
 
 
 // =========================================================================
@@ -118,51 +118,34 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({ isOpen, 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // API 호출 로직 (Debounce 적용)
   useEffect(() => {
-    // 검색어가 없으면 API를 호출하지 않고 목록을 비웁니다.
+    // 검색어가 없으면 API 호출 방지
     if (!searchTerm) {
       setCompanies([]);
       return;
     }
 
-    // 사용자가 타이핑을 멈췄을 때만 API를 호출하기 위한 Debounce 로직
     const delayDebounceFn = setTimeout(() => {
-      
-      // async/await를 사용하기 위한 비동기 함수를 선언합니다.
-      const search = async () => {
-        setIsLoading(true);
-        try {
-          // 1. axios.get을 사용하여 API를 호출합니다.
-          const response = await axios.get(`/api/companies/search?keyword=${searchTerm}`);
-          
-          // 3. axios는 응답 데이터를 response.data에 자동으로 담아줍니다.
-          //    백엔드 응답 구조에 맞춰 데이터를 설정합니다.
-          console.log("API Response:", response.data); // 디버깅용 로그
-          setCompanies(response.data.content || response.data.companies || []); /////////////////////////////여기 문제있음 해결법 찾자
-
-        } catch (error) {
+      setIsLoading(true);
+      fetch(`http://localhost:8080/api/companies/search?keyword=${searchTerm}`)
+        .then(res => res.json())
+        .then(data => setCompanies(data.content || data.companies || []))
+        .catch(error => {
           console.error("Error fetching companies:", error);
-          setCompanies([]); // 에러 발생 시 목록을 비웁니다.
-        } finally {
-          // 4. 요청이 성공하든 실패하든 항상 로딩 상태를 해제합니다.
-          setIsLoading(false);
-        }
-      };
-
-      search(); // 선언한 비동기 함수를 호출합니다.
-
+          setCompanies([]);
+        })
+        .finally(() => setIsLoading(false));
     }, 500); // 500ms 지연
 
-    // effect가 재실행되기 전에 이전 타이머를 정리합니다. (중요)
     return () => clearTimeout(delayDebounceFn);
-
-  }, [searchTerm]); // searchTerm이 변경될 때마다 이 effect가 실행됩니다.
+  }, [searchTerm]);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="기업 선택(100개씩 검색)"
+      title="기업 선택"
     >
       <>
         {/* 검색창 UI */}
