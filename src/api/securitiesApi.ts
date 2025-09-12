@@ -2,7 +2,8 @@ import axios from './axios';
 import type { 
   CompanyDataResponse, 
   AIAnnotationRequest, 
-  AIAnnotationResponse 
+  AINotesData, 
+  RiskData
 } from '../types/securities';
 
 // Securities API 객체
@@ -21,8 +22,22 @@ export const securitiesApi = {
     }
   },
 
+  fetchRiskData: async (companyCode: string): Promise<RiskData> => {
+    try {
+      const response = await axios.get(`/api/v1/variables/mapping/${companyCode}`);
+      
+      if (response.data && response.status === 200) {
+        return response.data;
+      } else {
+        throw new Error("변수 매핑 API 응답 오류");
+      }
+    } catch (error: any) {
+      throw new Error(`변수 매핑 API 호출 실패: ${error.message}`);
+    }
+  },
+
   // AI API - 주식 공모 주석 생성
-  generateEquityAnnotations: async (requestData: AIAnnotationRequest): Promise<AIAnnotationResponse> => {    
+  generateEquityAnnotations: async (requestData: AIAnnotationRequest): Promise<AINotesData> => {    
     try {
       const response = await axios.post('/api/ai/equity-annotation', requestData);
       

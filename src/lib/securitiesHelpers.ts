@@ -34,3 +34,18 @@ export const getDefaultNote = (index: number): string => {
   };
   return defaultNotes[index] || "주석 내용을 불러오는 중입니다...";
 };
+
+
+
+// 투자위험요소 문단 분리 함수
+export function splitTextIntoParagraphs(text: string | null | undefined): string[] {
+  // 입력값이 null이거나 undefined, 혹은 빈 문자열이면 빈 배열을 반환합니다.
+  if (!text) {
+    return [];
+  }
+
+  return text
+    .split('\n\n') // '\n\n'을 기준으로 문자열을 나눕니다.
+    .map(paragraph => paragraph.trim()) // 각 문단의 앞뒤에 있는 불필요한 공백을 제거합니다.
+    .filter(paragraph => paragraph.length > 0); // 내용이 없는 빈 문단을 배열에서 제거합니다.
+};

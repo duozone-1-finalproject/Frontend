@@ -69,13 +69,11 @@ export interface AIAnnotationRequest {
 
 // AI API 응답 타입
 export interface AIAnnotationResponse {
-  data: {
-    S4_NOTE1_1: string;
-    S4_NOTE1_2: string;
-    S4_NOTE1_3: string;
-    S4_NOTE1_4: string;
-    S4_NOTE1_5: string;
-  };
+  S4_NOTE1_1: string;
+  S4_NOTE1_2: string;
+  S4_NOTE1_3: string;
+  S4_NOTE1_4: string;
+  S4_NOTE1_5: string;
 }
 
 // 서비스 응답 타입
@@ -88,6 +86,7 @@ export interface SecuritiesServiceResponse<T> {
 // 기본 템플릿 데이터 (AI 주석 제외)
 export interface BaseTemplateData {
   // 기본 회사 정보
+  corp_code: string;
   company_name: string;
   ceo_name: string;
   address: string;
@@ -126,6 +125,13 @@ export interface BaseTemplateData {
   S4_11C_5: string;
 }
 
+// 투자위험요소 데이터
+export interface RiskData {
+  S3_1A_1: string;
+  S3_1B_1: string;
+  S3_1C_1: string;
+}
+
 // AI 주석 데이터
 export interface AINotesData {
   S4_NOTE1_1: string;
@@ -135,11 +141,14 @@ export interface AINotesData {
   S4_NOTE1_5: string;
 }
 
+// AI 응답 전 템플릿 데이터 타입 
+export type BeforeAITemplateData = BaseTemplateData & RiskData;
+
 // 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석)
-export type SecuritiesTemplateData = BaseTemplateData & AINotesData;
+export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData;
 
 // 진행률 콜백 타입
-export type ProgressCallback = (step: string, progress: number) => void;
+export type ProgressCallback = (step: string, progress: number, details?: string) => void;
 
 // AI 주석 상태 타입
 export type AiAnnotationState = 'loading' | 'success' | 'error';
@@ -149,5 +158,7 @@ export interface GenerateSecuritiesDataResponse {
   success: boolean;
   data: SecuritiesTemplateData | null;
   aiAnnotationState: AiAnnotationState;
+  riskDataState: AiAnnotationState;
   error: string | null;
+  duration: number;
 }
