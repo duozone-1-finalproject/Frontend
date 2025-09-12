@@ -242,6 +242,7 @@ export class SecuritiesDataService {
       console.log("🤖 [AI Request] 주식 공모 주석 생성 시작");
 
       const equityRequestData: AIAnnotationRequest = {
+        corp_code: templateData.corp_code || "",
         company_name: templateData.company_name || "",
         ceo_name: templateData.ceo_name ?? null,
         address: templateData.address ?? null,

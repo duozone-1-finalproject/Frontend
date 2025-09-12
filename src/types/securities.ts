@@ -55,6 +55,7 @@ export interface CompanyDataResponse {
 
 // AI API 요청 타입
 export interface AIAnnotationRequest {
+  corp_code: string;
   company_name: string;
   ceo_name: string | null;
   address: string | null;
