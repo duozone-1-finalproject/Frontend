@@ -1,6 +1,6 @@
 // Dart Viewer Service - 버전 및 문서 관리 서비스
-import { initializeData, createPayload, mergeAndFormatSection } from "../lib/dart-viewer/dartViewerHelpers"
-import { DBVersionData, ProjectState, VersionInfo } from "../types/dartViewer";
+import { initializeData, createPayload, mergeAndFormatSection, fillTemplate } from "../lib/dartViewerHelpers";
+import { DBVersionData, ProjectState, VersionInfo, TemplateData } from "../types/dartViewer";
 import { dartViewerApi } from "../api/dartViewerApi";
 
 
@@ -14,74 +14,39 @@ export async function fetchVersionsFromDB(userId: number): Promise<DBVersionData
   }
 }
 
-export async function initializeProject(userId: number) {
-  try {
-    const versionsData = await fetchVersionsFromDB(userId)
-
-    if (versionsData.v0) {
-      return versionsData
-    }
-
-    const initialData = await initializeData()
-    const payload = createPayload({
-      user_id: userId,
-      version: "v0",
-      version_number: 0,
-      description: "초기 버전",
-      sectionsData: initialData || {},
-    });
-    
-    const result = await dartViewerApi.createVersion(payload);
-    
-    const initVersion: DBVersionData = {
-      v0: {
-        createdAt: result.createdAt,
-        description: result.description,
-        modifiedSections: [],
-        section1: result.section1,
-        section2: result.section2,
-        section3: result.section3,
-        section4: result.section4,
-        section5: result.section5,
-        section6: result.section6,
-      }
-    }
-    return initVersion
-  } catch (error) {
-    console.error('프로젝트 초기화 오류:', error)
-    return {}
-  }
-}
-
 export async function loadFullProjectState(userId: number): Promise<ProjectState & { sectionsData: Record<string, string> }> {
   try {
-    const versionsData = await initializeProject(userId)
-    const versionKeys = Object.keys(versionsData)
+    const versionsData = await fetchVersionsFromDB(userId);
+    const versionKeys = Object.keys(versionsData);
     
     if (!versionsData || versionKeys.length === 0) {
-      throw new Error("프로젝트 초기화 실패")
+      throw new Error("프로젝트 초기화 실패 - MainPage에서 먼저 증권신고서를 생성해주세요.");
     }
 
-    let currentVersion = 'v0'
+    let currentVersion = 'v0';
     if (versionKeys.includes('editing')) {
-      currentVersion = 'editing'
+      currentVersion = 'editing';
     } else if (versionKeys.length > 0) {
       const numericVersions = versionKeys.filter(v => v.startsWith('v')).sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
       currentVersion = numericVersions[numericVersions.length - 1];
     }
+    
     const versions: VersionInfo[] = versionKeys.map(version => ({
       version,
       createdAt: versionsData[version].createdAt,
       description: versionsData[version].description || `버전 ${version}`,
       modifiedSections: versionsData[version].modifiedSections || []
     }));
+    
     const editingModifiedSections = versionsData['editing']?.modifiedSections;
     let parseModif: string[] = [];
     if (typeof editingModifiedSections == "string") {
       parseModif = JSON.parse(editingModifiedSections);
     }
     const modifiedSections = new Set(currentVersion === 'editing' ? parseModif || [] : []);
+    
     const versionData = versionsData[currentVersion] || {};
+    
     const sectionsData: Record<string, string> = {};
     Object.keys(versionData).forEach(key => {
       if (key.startsWith("section")) {
@@ -89,15 +54,16 @@ export async function loadFullProjectState(userId: number): Promise<ProjectState
       }
     });
 
-    return { currentVersion, versions, modifiedSections, sectionsData };
+    const result = { currentVersion, versions, modifiedSections, sectionsData };
+    return result;
   } catch (error) {
-    console.error('loadFullProjectState 오류:', error)
+    console.error('❌ [loadFullProjectState] 오류:', error);
     return {
       currentVersion: 'v0',
       versions: [],
       modifiedSections: new Set(),
       sectionsData: {}
-    }
+    };
   }
 }
 
@@ -141,49 +107,94 @@ export async function getVersionSections(version: string, userId: number): Promi
   }
 }
 
-
-export async function saveDocumentContent(userId: number, sectionKey: string, content: string) {
-  try {
-    const finalHtml = `<!DOCTYPE html>\n${content}`
-    const payload = createPayload({
-      user_id: userId, 
-      description: "편집중인 버전", 
-      sectionsData: { [sectionKey]: finalHtml }
-    });
-
-    await dartViewerApi.patchEditingVersion(payload);
-    return { success: true, message: "편집 버전이 저장되었습니다.", data: finalHtml}
-  } catch (error) {
-    console.error('Error saving document content to DB:', error)
-    return { success: false, message: 'DB 저장 중 오류가 발생했습니다.' }
-  }
-}
-
-// 💡 3. token 파라미터 추가
 export async function updateDocumentSection(
   userId: number,
-  htmlContent: string,
-  sectionName: string,
-  sectionType: 'section-1' | 'section-2',
-  updatedContent: string,
   sectionKey: string,
+  editedHtml: string,
+  options: {
+    htmlContent?: string;
+    sectionName?: string;
+    sectionType?: 'part' | 'section-1' | 'section-2';
+  }
 ) {
   try {
-    const formattedHtml = await mergeAndFormatSection(htmlContent, sectionType, sectionName, updatedContent);
-    if (!formattedHtml) return { success: false, message: "섹션 업데이트 실패: 대상 섹션을 찾을 수 없습니다." };
+    let finalHtml: string | null = null;
+
+    if (options.sectionType === 'part') {
+      console.log("진입완료")
+      // part 전체 저장
+      finalHtml = `<!DOCTYPE html>\n${editedHtml}`;
+    } else {
+      console.log(options.sectionType);
+      console.log("진입완료2")
+      // 하위 section 병합
+      finalHtml = await mergeAndFormatSection(
+        options.htmlContent ?? '',
+        options.sectionType ?? 'section-2',
+        options.sectionName ?? '',
+        editedHtml
+      );
+      if (!finalHtml) {
+        return { success: false, message: "섹션 업데이트 실패: 대상 섹션을 찾을 수 없습니다." };
+      }
+    }
 
     const payload = createPayload({
-      user_id: userId, 
-      description: "편집중인 버전", 
-      sectionsData: { [sectionKey]: formattedHtml }
+      user_id: userId,
+      description: "편집중인 버전",
+      sectionsData: { [sectionKey]: finalHtml }
     });
 
     await dartViewerApi.updateEditingVersion(payload);
 
-    return { success: true, message: "편집 버전이 저장되었습니다.", data: formattedHtml }
+    return { success: true, message: "편집 버전이 저장되었습니다.", data: finalHtml };
   } catch (error) {
-    console.error('Error updating document section:', error)
-    return { success: false, message: '섹션 업데이트 중 오류가 발생했습니다.' }
+    console.error("Error saving/updating document content:", error);
+    return { success: false, message: "문서 저장/업데이트 중 오류가 발생했습니다." };
+  }
+}
+
+// 템플릿 데이터를 적용한 v0 버전 생성
+export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
+  try {    
+    const versionsData = await fetchVersionsFromDB(userId);
+
+    if (versionsData.v0) {
+      return {success: true, message: 'v0 버전이 이미 존재합니다.'};
+    }
+    // 기본 템플릿 데이터 로드
+    const initialSectionsData = await initializeData();
+    
+    // 각 섹션에 템플릿 데이터 적용
+    const filledSectionsData: Record<string, string> = {};
+    for (const [sectionKey, template] of Object.entries(initialSectionsData)) {
+      filledSectionsData[sectionKey] = fillTemplate(template, templateData);
+    }
+        
+    // v0 버전으로 DB 저장
+    const payload = createPayload({
+      user_id: userId,
+      version: "v0",
+      version_number: 0,
+      description: `${templateData.company_name} 증권신고서 초기 버전`,
+      sectionsData: filledSectionsData,
+    });
+    
+    const result = await dartViewerApi.createVersion(payload);
+    
+    return {
+      success: true,
+      message: 'v0 버전이 성공적으로 생성되었습니다.',
+      data: result
+    };
+    
+  } catch (error: any) {
+    console.error('❌ [Service] v0 버전 생성 실패:', error);
+    return {
+      success: false,
+      message: error.message || 'v0 버전 생성 중 오류가 발생했습니다.',
+      data: null
+    };
   }
 }
 

@@ -1,21 +1,21 @@
-import { DocumentSection } from "../../types/dartViewer";
+import { DocumentSection } from "../types/dartViewer";
 import prettier from "prettier/standalone";
 import parserHtml from "prettier/plugins/html";
-import { PayloadOptions } from "../../types/dartViewer";
-import { TemplateData } from "../../types/dartViewer";
+import { PayloadOptions } from "../types/dartViewer";
+import { TemplateData } from "../types/dartViewer";
 
 export const mockDocumentData: DocumentSection[] = [
   {
     id: '1',
     title: '증권신고서',
     sectionKey: 'section1',
-    type: 'section-2'
+    type: 'part'
   },
   {
     id: '2',
     title: '【 대표이사 등의 확인 】',
     sectionKey: 'section2',
-    type: 'section-2'
+    type: 'part'
   },
   {
     id: '3',

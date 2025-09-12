@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { saveDocumentContent, updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
-import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, fillTemplate, ensureReadOnlyMode } from '../../lib/dart-viewer/dartViewerHelpers'
-import { ValidationResponse, TemplateData } from '../../types/dartViewer'
+import { updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
+import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, ensureReadOnlyMode } from '../../lib/dartViewerHelpers'
+import { ValidationResponse } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
@@ -9,7 +9,6 @@ export interface UseDocumentContentProps {
   sectionId: string
   sectionName?: string
   sectionType?: 'part' | 'section-1' | 'section-2'
-  templateData?: TemplateData | null
   onSectionModified?: (sectionId: string, modifiedHtml: string) => void
   onValidateSection?: (sectionId: string, htmlContent: string) => void
 }
@@ -20,7 +19,6 @@ export function useDocumentContent({
   sectionId,
   sectionName,
   sectionType,
-  templateData,
   onSectionModified,
   onValidateSection
 }: UseDocumentContentProps) {
@@ -34,6 +32,8 @@ export function useDocumentContent({
   const [isValidating, setIsValidating] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [validationResult, setValidationResult] = useState<ValidationResponse | null>(null)
+  const [validationStep, setValidationStep] = useState(0)
+  const [validationProgress, setValidationProgress] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const hasSavedRef = useRef(false)
 
@@ -52,9 +52,9 @@ export function useDocumentContent({
   // 컨텐츠 로딩
   useEffect(() => {
     const loadContent = () => {
-      if (!htmlContent || !templateData) {
-        if (!htmlContent) setHasError(true)
-        return
+      if (!htmlContent) {
+        setHasError(true);
+        return;
       }
       setIsLoading(true)
       setHasError(false)
@@ -98,39 +98,6 @@ export function useDocumentContent({
           }
         }
         
-        // 템플릿 데이터가 있으면 적용
-        if (templateData) {
-          console.log('🔥 [DocumentContent] 템플릿 데이터 적용 시작')
-          console.log('📊 [DocumentContent] 템플릿 데이터 키들:', Object.keys(templateData))
-          
-          const beforeLength = processedHtml.length;
-          processedHtml = fillTemplate(processedHtml, templateData);
-          const afterLength = processedHtml.length;
-          
-          console.log('✅ [DocumentContent] 템플릿 적용 완료')
-          console.log(`📏 [DocumentContent] HTML 길이 변화: ${beforeLength} → ${afterLength}`)
-          
-          // 템플릿이 적용된 일부를 로그로 확인
-          const templateKeys = Object.keys(templateData);
-          (templateKeys as (keyof TemplateData)[]).forEach(key => {
-            const value = templateData[key];
-            if (value && typeof value === 'string') {
-              const keyExists = processedHtml.includes(value);
-              console.log(`🔍 [DocumentContent] 키 "${key}" = "${value}" → HTML에 존재: ${keyExists}`);
-            }
-          });
-          if (!hasSavedRef.current) {
-            hasSavedRef.current = true
-            const sectionKey = getSectionKeyFromId(sectionId)
-        
-            saveDocumentContent(userId, sectionKey, processedHtml)
-              .then(() => console.log("💾 [DocumentContent] 치환된 HTML 자동 저장 완료"))
-              .catch(err => console.error("❌ [DocumentContent] 자동 저장 실패:", err))
-          }
-        } else {
-          console.log('⚠️ [DocumentContent] 템플릿 데이터 없음 - 원본 HTML 사용')
-        }
-
         if (iframeRef.current) {
           const iframeDoc = iframeRef.current.contentDocument
           if (iframeDoc) {
@@ -152,7 +119,7 @@ export function useDocumentContent({
       }
     }
     loadContent()
-  }, [htmlContent, sectionId, sectionName, sectionType, templateData])
+  }, [htmlContent, sectionId, sectionName, sectionType])
 
   const handleEdit = () => {
     if (!iframeRef.current) return
@@ -194,14 +161,14 @@ export function useDocumentContent({
       editedHtml = iframeDoc.documentElement.outerHTML
 
       const sectionKey = getSectionKeyFromId(sectionId)
-
-      if (sectionName && sectionType && sectionType !== 'part') {
-        result = await updateDocumentSection(userId, htmlContent, sectionName, sectionType, editedHtml, sectionKey)
-      } else {
-        result = await saveDocumentContent(userId, sectionKey, editedHtml)
+      const options = {
+        htmlContent,
+        sectionName,
+        sectionType,
       }
+
+      result = await updateDocumentSection(userId, sectionKey, editedHtml, options);
       
-      const finalHtml = result.data || editedHtml
       setCurrentHtml(editedHtml)
       setOriginalHtml(editedHtml)
       setIsEditing(false)
@@ -291,38 +258,70 @@ export function useDocumentContent({
     if (!iframeRef.current) return
     
     setIsValidating(true)
-    setValidationMessage('검증 중입니다...')
+    setValidationStep(1)
+    setValidationProgress(0)
+    
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
     
     try {
+      // Step 1: 문서 분석 시작
+      setValidationMessage('🔍 문서 구조 분석 중...')
+      setValidationProgress(20)
+      await delay(800)
+      
       const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
       if (!iframeDoc) return
       
-      // 현재 렌더링된 HTML 추출
+      // Step 2: 내용 추출
+      setValidationStep(2)
+      setValidationMessage('📝 문서 내용 추출 중...')
+      setValidationProgress(40)
+      await delay(600)
+      
       const currentRenderedHtml = iframeDoc.documentElement.outerHTML
       console.log('Extracted HTML length:', currentRenderedHtml.length)
       
+      // Step 3: AI 검증 요청
+      setValidationStep(3)
+      setValidationMessage('🤖 AI 검증 분석 중...')
+      setValidationProgress(60)
+      await delay(400)
+      
       // 백엔드 API 호출하여 검증 수행
       const result = await validateSectionContent(userId, sectionId, currentRenderedHtml)
+      
+      // Step 4: 결과 처리
+      setValidationStep(4)
+      setValidationMessage('📊 검증 결과 처리 중...')
+      setValidationProgress(80)
+      await delay(500)
+      
+      // Step 5: 완료
+      setValidationProgress(100)
+      await delay(300)
       
       if (result.success && result.validationData) {
         const validationData = result.validationData as ValidationResponse
         console.log('Validation data:', validationData)
         setValidationResult(validationData)
         
+        // 텍스트 하이라이팅 적용
+        highlightValidationIssues(validationData)
+        
         // 검증 결과에 따른 메시지 설정
         if (validationData.decision === 'approve') {
-          setValidationMessage('✅ 검증 통과: 문제없습니다!')
+          setValidationMessage('✅ 검증 완료: 문제없습니다!')
         } else {
           const issueCount = validationData.issues.length
           const highCount = validationData.issues.filter(i => i.severity === 'high').length
           const mediumCount = validationData.issues.filter(i => i.severity === 'medium').length
           
           if (highCount > 0) {
-            setValidationMessage(`⚠️ ${issueCount}개의 문제점 발견 (심각: ${highCount}개)`)
+            setValidationMessage(`⚠️ 검증 완료: ${issueCount}개 문제점 발견 (심각: ${highCount}개)`)
           } else if (mediumCount > 0) {
-            setValidationMessage(`⚠️ ${issueCount}개의 문제점 발견 (보통: ${mediumCount}개)`)
+            setValidationMessage(`⚠️ 검증 완료: ${issueCount}개 문제점 발견 (보통: ${mediumCount}개)`)
           } else {
-            setValidationMessage(`💡 ${issueCount}개의 개선사항 발견`)
+            setValidationMessage(`💡 검증 완료: ${issueCount}개 개선사항 발견`)
           }
         }
         
@@ -342,6 +341,8 @@ export function useDocumentContent({
       setValidationMessage('검증 중 오류가 발생했습니다.')
     } finally {
       setIsValidating(false)
+      setValidationStep(0)
+      setValidationProgress(0)
       
       // 8초 후 검증 메시지 자동 삭제 (페이드아웃 효과와 함께)
       setTimeout(() => {
@@ -354,6 +355,140 @@ export function useDocumentContent({
   const clearValidationResult = () => {
     setValidationResult(null)
     setValidationMessage('')
+  }
+
+  // 텍스트 하이라이팅 함수
+  const highlightValidationIssues = (validationData: ValidationResponse) => {
+    if (!iframeRef.current) return
+    
+    const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
+    if (!iframeDoc) return
+
+    // 기존 하이라이트 제거
+    const existingHighlights = iframeDoc.querySelectorAll('.validation-highlight')
+    existingHighlights.forEach(el => {
+      const parent = el.parentNode
+      if (parent) {
+        parent.replaceChild(el.firstChild!, el)
+        parent.normalize()
+      }
+    })
+
+    // CSS 스타일 추가 (한 번만)
+    if (!iframeDoc.querySelector('#validation-styles')) {
+      const style = iframeDoc.createElement('style')
+      style.id = 'validation-styles'
+      style.textContent = `
+        @keyframes flash {
+          0%, 100% { 
+            background-color: inherit; 
+            transform: scale(1);
+          }
+          50% { 
+            background-color: #fbbf24 !important; 
+            transform: scale(1.02);
+          }
+        }
+        .validation-highlight {
+          transition: all 0.3s ease;
+        }
+        .validation-highlight.flash-animation {
+          animation: flash 1s ease-in-out 3;
+        }
+      `
+      iframeDoc.head.appendChild(style)
+    }
+
+    // 새로운 하이라이트 추가
+    validationData.issues.forEach((issue, issueIndex) => {
+      const spanText = issue.span.trim()
+      if (!spanText) return
+
+      try {
+        // 여러 가지 방식으로 텍스트 찾기
+        const searchTexts = [
+          spanText,
+          spanText.replace(/\s+/g, ' '), // 공백 정규화
+          spanText.substring(0, 30), // 앞 30글자
+          spanText.split('\n')[0].trim(), // 첫 번째 줄
+        ]
+
+        let found = false
+        
+        for (const searchText of searchTexts) {
+          if (found || !searchText) continue
+          
+          // 전체 body 텍스트에서 검색
+          const bodyText = iframeDoc.body.innerText || iframeDoc.body.textContent || ''
+          if (!bodyText.includes(searchText)) continue
+          
+          // TreeWalker로 텍스트 노드 찾기
+          const walker = iframeDoc.createTreeWalker(
+            iframeDoc.body,
+            NodeFilter.SHOW_TEXT,
+            {
+              acceptNode: (node) => {
+                const text = node.textContent || ''
+                return text.trim() && text.includes(searchText) 
+                  ? NodeFilter.FILTER_ACCEPT 
+                  : NodeFilter.FILTER_REJECT
+              }
+            }
+          )
+
+          let textNode
+          while (textNode = walker.nextNode() as Text) {
+            const text = textNode.textContent || ''
+            const textIndex = text.indexOf(searchText)
+            
+            if (textIndex !== -1) {
+              // 하이라이트 요소 생성
+              const highlightSpan = iframeDoc.createElement('span')
+              highlightSpan.className = `validation-highlight validation-${issue.severity}`
+              highlightSpan.style.cssText = `
+                background-color: ${issue.severity === 'high' ? 'rgba(239, 68, 68, 0.3)' : 
+                                   issue.severity === 'medium' ? 'rgba(245, 158, 11, 0.3)' : 
+                                   'rgba(234, 179, 8, 0.3)'} !important;
+                border-bottom: 2px solid ${issue.severity === 'high' ? '#ef4444' : 
+                                          issue.severity === 'medium' ? '#f59e0b' : 
+                                          '#eab308'};
+                cursor: pointer;
+                position: relative;
+                padding: 2px 4px;
+                border-radius: 3px;
+              `
+              highlightSpan.title = `${issue.reason}\n\n💡 ${issue.suggestion}`
+              highlightSpan.setAttribute('data-issue-index', issueIndex.toString())
+              highlightSpan.setAttribute('data-issue-text', searchText)
+              
+              // 텍스트 분할 및 하이라이트 적용
+              const beforeText = text.substring(0, textIndex)
+              const highlightText = text.substring(textIndex, textIndex + searchText.length)
+              const afterText = text.substring(textIndex + searchText.length)
+
+              const parent = textNode.parentNode!
+              
+              if (beforeText) {
+                parent.insertBefore(iframeDoc.createTextNode(beforeText), textNode)
+              }
+              
+              highlightSpan.textContent = highlightText
+              parent.insertBefore(highlightSpan, textNode)
+              
+              if (afterText) {
+                parent.insertBefore(iframeDoc.createTextNode(afterText), textNode)
+              }
+              
+              parent.removeChild(textNode)
+              found = true
+              break
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('텍스트 하이라이팅 실패:', error)
+      }
+    })
   }
 
   return {
@@ -369,6 +504,8 @@ export function useDocumentContent({
     isValidating,
     validationMessage,
     validationResult,
+    validationStep,
+    validationProgress,
     
     // refs
     iframeRef,
@@ -380,6 +517,7 @@ export function useDocumentContent({
     handleImageInsert,
     handleRetry,
     handleValidate,
-    clearValidationResult
+    clearValidationResult,
+    highlightValidationIssues
   }
 }
