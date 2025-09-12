@@ -29,7 +29,7 @@ export function DocumentViewer() {
     handleCreateNewVersion,
     handleDeleteEditingVersion,
     handleSwitchVersion,
-  } = useDocumentViewer(123456)
+  } = useDocumentViewer(123)
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -144,7 +144,7 @@ export function DocumentViewer() {
             </div>
           ) : (
             <DocumentContent
-              userId={123456}
+              userId={123}
               htmlContent={currentSectionHTML}
               sectionId={selectedSection}
               sectionName={currentSection?.sectionName}
