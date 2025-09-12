@@ -5,6 +5,7 @@ export interface CompanyDataResponse {
   status: string;
   data: {
     companyOverview: {
+      corpCode: string;
       corpName: string;
       ceoNm: string;
       adres: string;
@@ -33,6 +34,19 @@ export interface CompanyDataResponse {
           sband?: string;
           asand?: string;
           asstd?: string;
+          se?: string;
+          amt?: number;
+          exstk?: string;
+          hdr?: string;
+          rlCmp?: string;
+          bfslHdstk?: number;
+          slstk?: number;
+          atslHdstk?: number;
+          grtrs?: string;
+          exavivr?: string;
+          grtcnt?: number;
+          expd?: string;
+          exprc?: number;
         }>;
       }>;
     };
@@ -93,6 +107,11 @@ export interface BaseTemplateData {
   establishment_date: string;
   company_phone: string;
   company_website: string;
+
+  // 날짜 변수
+  S1_1A_1: string,
+  S1_1A_2: string,
+  S1_1A_3: string
   
   // S1 섹션 (기본 정보)
   S1_1A_4: string;
@@ -123,6 +142,56 @@ export interface BaseTemplateData {
   S4_11C_3: string;
   S4_11C_4: string;
   S4_11C_5: string;
+
+  // 🆕 S3 섹션 추가 매핑
+
+  // 증권의 종류
+  S3_2A_1: string;
+  S3_2A_2: string;
+  S3_2A_3: string;
+  S3_2A_4: string;
+  S3_2A_5: string;
+  S3_2A_6: string;
+
+  // 인수인정보
+  S3_2C_0: string;
+  S3_2C_1: string;
+  S3_2C_2: string;
+  S3_2C_3: string;
+  S3_2C_4: string;
+  S3_2C_5: string;
+  S3_2C_6: string;
+
+  // 일반사항
+  S3_2D_1: string;
+  S3_2D_2: string;
+  S3_2D_3: string;
+  S3_2D_4: string;
+  S3_2D_5: string;
+
+  // 자금의 사용목적
+  S3_2F_DATA: { se: string; amt: string }[];
+  S3_2F_1: string;
+  S3_2F_2: string;
+
+  // 신주인수권에 관한 사항
+  S3_2G_1: string;
+  S3_2G_2: string;
+
+  // 매출인에 관한 사항
+  S3_2H_DATA: { hdr: string; rlCmp: string; bfslHdstk: string; slstk: string; atslHdstk: string }[];
+  S3_2H_1: string;
+  S3_2H_2: string;
+  S3_2H_3: string;
+  S3_2H_4: string;
+  S3_2H_5: string;
+
+  // 일반청약자환매청구권
+  S3_2I_1: string;
+  S3_2I_2: string;
+  S3_2I_3: string;
+  S3_2I_4: string;
+  S3_2I_5: string;
 }
 
 // 투자위험요소 데이터

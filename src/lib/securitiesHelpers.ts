@@ -49,3 +49,13 @@ export function splitTextIntoParagraphs(text: string | null | undefined): string
     .map(paragraph => paragraph.trim()) // 각 문단의 앞뒤에 있는 불필요한 공백을 제거합니다.
     .filter(paragraph => paragraph.length > 0); // 내용이 없는 빈 문단을 배열에서 제거합니다.
 };
+
+export const getCurrentDateVariables = () => {
+  const now = new Date();
+  return {
+    S1_1A_1: now.getFullYear().toString(),           // 2025
+    S1_1A_2: String(now.getMonth() + 1).padStart(2, '0'),  // 09
+    S1_1A_3: String(now.getDate()).padStart(2, '0')        // 12
+  };
+};
+

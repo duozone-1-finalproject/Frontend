@@ -1,6 +1,6 @@
 // services/securitiesDataService.ts
 import { securitiesApi } from '../api/securitiesApi';
-import { formatNumber, formatDate, getDefaultNote, splitTextIntoParagraphs } from '../lib/securitiesHelpers';
+import { formatNumber, formatDate, getDefaultNote, splitTextIntoParagraphs, getCurrentDateVariables } from '../lib/securitiesHelpers';
 import type { 
   AIAnnotationRequest, 
   SecuritiesServiceResponse,
@@ -28,45 +28,126 @@ export class SecuritiesDataService {
 
       const response = await securitiesApi.fetchCompanyData(companyCode);
       const apiData = response.data;
+
+      onProgress?.("⚙️ 회사 데이터 분석 중", 25, "증권 정보 및 회사 개요 데이터를 구조화하는 중...");
+
+      // 각 그룹별로 데이터 추출
+      const groups = apiData.equitySecurities?.group || [];
+
+      // 각 섹션별로 데이터 찾기
+      const findGroup = (title: string) => groups.find((g: any) => g.title === title);
+
+      // 🆕 현재 날짜 변수 추가
+      const currentDateVars = getCurrentDateVariables();
+        
+      const 증권종류 = findGroup("증권의종류")?.list?.[0];
+      const 인수인정보 = findGroup("인수인정보")?.list?.[0];
+      const 일반사항 = findGroup("일반사항")?.list?.[0];
+      const 자금사용목적 = findGroup("자금의사용목적")?.list || [];
+      const 매출인사항 = findGroup("매출인에관한사항")?.list || [];
+      const 환매청구권 = findGroup("일반청약자환매청구권")?.list?.[0];
         
       const mappedData = {
-        S1_1A_4: apiData.companyOverview?.corpName ?? "",
-        S1_1A_5: apiData.companyOverview?.ceoNm ?? "",
-        S1_1A_6: apiData.companyOverview?.adres ?? "",
-        S1_1A_7: apiData.companyOverview?.phnNo ?? "",
-        S1_1A_8: apiData.companyOverview?.hmUrl ?? "",
-        S1_1A_C: apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.stksen || "",
-        S1_1A_D: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.stkcnt) ?? "",
-        S1_1A_E: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.slta) ?? "",
+        // 🆕 현재 날짜 변수 추가
+        ...currentDateVars,
 
-        corp_code: apiData.companyOverview?.corpName ?? "",
-        company_name: apiData.companyOverview?.corpName ?? "",
-        ceo_name: apiData.companyOverview?.ceoNm ?? "",
-        address: apiData.companyOverview?.adres ?? "",
-        establishment_date: apiData.companyOverview?.estDt ?? "",
-        company_phone: apiData.companyOverview?.phnNo ?? "",
-        company_website: apiData.companyOverview?.hmUrl ?? "",
+        // 기존 매핑 유지
+        S1_1A_4: apiData.companyOverview?.corpName,
+        S1_1A_5: apiData.companyOverview?.ceoNm,
+        S1_1A_6: apiData.companyOverview?.adres,
+        S1_1A_7: apiData.companyOverview?.phnNo,
+        S1_1A_8: apiData.companyOverview?.hmUrl,
+        S1_1A_C: 증권종류?.stksen || "",
+        S1_1A_D: formatNumber(증권종류?.stkcnt),
+        S1_1A_E: formatNumber(증권종류?.slta),
 
-        S4_11A_1: apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.stksen || "",
-        S4_11A_2: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.stkcnt) ?? "",
-        S4_11A_3: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.fv) ?? "",
-        S4_11A_4: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.slprc) ?? "",
-        S4_11A_5: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.slta) ?? "",
-        S4_11A_6: apiData.equitySecurities?.group?.find((g: any) => g.title === "증권의종류")?.list?.[0]?.slmthn || "",
+        corp_code: apiData.companyOverview?.corpCode,
+        company_name: apiData.companyOverview?.corpName,
+        ceo_name: apiData.companyOverview?.ceoNm,
+        address: apiData.companyOverview?.adres,
+        establishment_date: apiData.companyOverview?.estDt,
+        company_phone: apiData.companyOverview?.phnNo,
+        company_website: apiData.companyOverview?.hmUrl,
 
-        S4_11B_1: apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.actsen || "",
-        S4_11B_2: apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.actnmn || "",
-        S4_11B_3: apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.stksen || "",
-        S4_11B_4: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.udtcnt) ?? "",
-        S4_11B_5: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.udtamt) ?? "",
-        S4_11B_6: formatNumber(apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.udtprc) ?? "",
-        S4_11B_7: apiData.equitySecurities?.group?.find((g: any) => g.title === "인수인정보")?.list?.[0]?.udtmth || "",
+        S4_11A_1: 증권종류?.stksen || "",
+        S4_11A_2: formatNumber(증권종류?.stkcnt),
+        S4_11A_3: formatNumber(증권종류?.fv),
+        S4_11A_4: formatNumber(증권종류?.slprc),
+        S4_11A_5: formatNumber(증권종류?.slta),
+        S4_11A_6: 증권종류?.slmthn || "",
 
-        S4_11C_1: apiData.equitySecurities?.group?.find((g: any) => g.title === "일반사항")?.list?.[0]?.sbd || "",
-        S4_11C_2: formatDate(apiData.equitySecurities?.group?.find((g: any) => g.title === "일반사항")?.list?.[0]?.pymd ?? null) || "",
-        S4_11C_3: formatDate(apiData.equitySecurities?.group?.find((g: any) => g.title === "일반사항")?.list?.[0]?.sband ?? null) || "",
-        S4_11C_4: formatDate(apiData.equitySecurities?.group?.find((g: any) => g.title === "일반사항")?.list?.[0]?.asand ?? null) || "",
-        S4_11C_5: formatDate(apiData.equitySecurities?.group?.find((g: any) => g.title === "일반사항")?.list?.[0]?.asstd ?? null) || "-",
+        S4_11B_1: 인수인정보?.actsen || "",
+        S4_11B_2: 인수인정보?.actnmn || "",
+        S4_11B_3: 인수인정보?.stksen || "",
+        S4_11B_4: formatNumber(인수인정보?.udtcnt),
+        S4_11B_5: formatNumber(인수인정보?.udtamt),
+        S4_11B_6: formatNumber(인수인정보?.udtprc),
+        S4_11B_7: 인수인정보?.udtmth || "",
+
+        S4_11C_1: 일반사항?.sbd || "",
+        S4_11C_2: formatDate(일반사항?.pymd ?? null) || "",
+        S4_11C_3: formatDate(일반사항?.sband ?? null) || "",
+        S4_11C_4: formatDate(일반사항?.asand ?? null) || "",
+        S4_11C_5: formatDate(일반사항?.asstd ?? null) || "-",
+
+        // 🆕 새로운 매핑 추가 - 증권의 종류
+        S3_2A_1: 증권종류?.stksen || "",
+        S3_2A_2: formatNumber(증권종류?.stkcnt),
+        S3_2A_3: formatNumber(증권종류?.fv),
+        S3_2A_4: formatNumber(증권종류?.slprc),
+        S3_2A_5: formatNumber(증권종류?.slta),  // ✅ 수정: 누락되었던 모집(매출)총액 매핑
+        S3_2A_6: 증권종류?.slmthn || "",
+
+        // 🆕 새로운 매핑 추가 - 인수인정보
+        S3_2C_0: 인수인정보?.actsen || "",
+        S3_2C_1: 인수인정보?.actnmn || "",
+        S3_2C_2: 인수인정보?.stksen || "",
+        S3_2C_3: formatNumber(인수인정보?.udtamt),
+        S3_2C_4: formatNumber(인수인정보?.udtamt),  // ✅ 수정: 인수금액 매핑 (udtamt를 사용)
+        S3_2C_5: formatNumber(인수인정보?.udtprc),
+        S3_2C_6: 인수인정보?.udtmth || "",
+
+        // 🆕 새로운 매핑 추가 - 일반사항
+        S3_2D_1: 일반사항?.sbd || "",
+        S3_2D_2: formatDate(일반사항?.pymd ?? null) || "",  // ✅ 수정: 납입기일 매핑 (pymd를 사용)
+        S3_2D_3: formatDate(일반사항?.sband ?? null) || "",
+        S3_2D_4: formatDate(일반사항?.asand ?? null) || "",
+        S3_2D_5: formatDate(일반사항?.asstd ?? null) || "-",
+
+        // 🆕 새로운 매핑 추가 - 자금의 사용목적 (배열 형태로 저장)
+        S3_2F_DATA: 자금사용목적.map((item: any) => ({
+          se: item.se || "",
+          amt: formatNumber(item.amt) || ""
+        })),
+        // 첫 번째 자금사용목적만 개별 변수로도 저장
+        S3_2F_1: 자금사용목적[0]?.se || "",
+        S3_2F_2: formatNumber(자금사용목적[0]?.amt) || "",
+
+        // 🆕 새로운 매핑 추가 - 신주인수권에 관한 사항 (일반사항에서 가져옴)
+        S3_2G_1: 일반사항?.exstk || "",
+        S3_2G_2: formatNumber(일반사항?.exprc) || "",
+
+        // 🆕 새로운 매핑 추가 - 매출인에 관한 사항 (배열 형태로 저장)
+        S3_2H_DATA: 매출인사항.map((item: any) => ({
+          hdr: item.hdr || "",
+          rlCmp: item.rlCmp || "",
+          bfslHdstk: formatNumber(item.bfslHdstk) || "",
+          slstk: formatNumber(item.slstk) || "",
+          atslHdstk: formatNumber(item.atslHdstk) || ""
+        })),
+        // 첫 번째 매출인정보만 개별 변수로도 저장
+        S3_2H_1: 매출인사항[0]?.hdr || "",
+        S3_2H_2: 매출인사항[0]?.rlCmp || "",
+        S3_2H_3: formatNumber(매출인사항[0]?.bfslHdstk) || "",
+        S3_2H_4: formatNumber(매출인사항[0]?.slstk) || "",
+        S3_2H_5: formatNumber(매출인사항[0]?.atslHdstk) || "",
+
+        // 🆕 새로운 매핑 추가 - 일반청약자환매청구권
+        S3_2I_1: 환매청구권?.grtrs || "",
+        S3_2I_2: 환매청구권?.exavivr || "",
+        S3_2I_3: formatNumber(환매청구권?.grtcnt) || "",
+        S3_2I_4: 환매청구권?.expd || "",
+        S3_2I_5: formatNumber(환매청구권?.exprc) || ""
       };
 
       return {
@@ -354,5 +435,202 @@ export class SecuritiesDataService {
     console.log("🔄 [Regenerate] AI 주석 재생성 시작");
     return await this.requestEquityAnnotations(templateData);
   }
+
+  // 🆕 7. 지분증권 데이터만 가져오기 (새로 추가)
+  static async fetchEquitySecuritiesDataOnly(companyCode: string, onProgress?: ProgressCallback) {
+    try {
+      onProgress?.("📡 지분증권 데이터 조회 중", 20, "DART API에서 지분증권 데이터를 가져오는 중...");
+      
+      const result = await this.fetchBasicCompanyData(companyCode, onProgress);
+      
+      if (result.success && result.data) {
+        // 지분증권 관련 데이터만 추출
+        const equityData = {
+          // 증권의 종류
+          securities: {
+            S3_2A_1: result.data.S3_2A_1, // 증권의종류
+            S3_2A_2: result.data.S3_2A_2, // 증권수량
+            S3_2A_3: result.data.S3_2A_3, // 액면가액
+            S3_2A_4: result.data.S3_2A_4, // 모집(매출)가액
+            S3_2A_5: result.data.S3_2A_5, // 모집(매출)총액 ✅ 수정됨
+            S3_2A_6: result.data.S3_2A_6, // 모집(매출)방법
+          },
+          // 인수인정보
+          underwriter: {
+            S3_2C_0: result.data.S3_2C_0, // 인수(주선)인
+            S3_2C_1: result.data.S3_2C_1, // 인수인 회사명
+            S3_2C_2: result.data.S3_2C_2, // 증권의종류
+            S3_2C_3: result.data.S3_2C_3, // 인수수량
+            S3_2C_4: result.data.S3_2C_4, // 인수금액 ✅ 수정됨
+            S3_2C_5: result.data.S3_2C_5, // 인수대가
+            S3_2C_6: result.data.S3_2C_6, // 인수방법
+          },
+          // 일반사항
+          general: {
+            S3_2D_1: result.data.S3_2D_1, // 청약기일
+            S3_2D_2: result.data.S3_2D_2, // 납입기일 ✅ 수정됨
+            S3_2D_3: result.data.S3_2D_3, // 청약공고일
+            S3_2D_4: result.data.S3_2D_4, // 배정공고일
+            S3_2D_5: result.data.S3_2D_5, // 배정기준일
+          },
+          // 자금의 사용 목적
+          fundUsage: {
+            S3_2F_1: result.data.S3_2F_1, // 구분
+            S3_2F_2: result.data.S3_2F_2, // 금액
+            S3_2F_DATA: result.data.S3_2F_DATA, // 전체 자금사용 목적 배열
+          },
+          // 신주인수권에 관한 사항
+          stockRights: {
+            S3_2G_1: result.data.S3_2G_1, // 행사대상증권
+            S3_2G_2: result.data.S3_2G_2, // 행사가격
+          },
+          // 매출인에 관한 사항
+          sellers: {
+            S3_2H_1: result.data.S3_2H_1, // 보유자
+            S3_2H_2: result.data.S3_2H_2, // 회사와의 관계
+            S3_2H_3: result.data.S3_2H_3, // 매출전 보유증권수
+            S3_2H_4: result.data.S3_2H_4, // 매출증권수
+            S3_2H_5: result.data.S3_2H_5, // 매출후 보유증권수
+            S3_2H_DATA: result.data.S3_2H_DATA, // 전체 매출인 정보 배열
+          },
+          // 일반청약자환매청구권
+          redemption: {
+            S3_2I_1: result.data.S3_2I_1, // 부여사유
+            S3_2I_2: result.data.S3_2I_2, // 행사가능 투자자
+            S3_2I_3: result.data.S3_2I_3, // 부여수량
+            S3_2I_4: result.data.S3_2I_4, // 행사기간
+            S3_2I_5: result.data.S3_2I_5, // 행사가격
+          }
+        };
+
+        onProgress?.("✅ 지분증권 데이터 추출 완료", 100, "모든 지분증권 데이터가 성공적으로 매핑되었습니다.");
+        
+        console.log("✅ [Equity Securities] 지분증권 데이터만 추출 완료:", equityData);
+        
+        return {
+          success: true,
+          data: equityData
+        };
+      } else {
+        throw new Error(result.error || "지분증권 데이터 로드 실패");
+      }
+    } catch (error: any) {
+      console.error("❌ [Equity Securities Error] 지분증권 데이터 로딩 실패:", error);
+      onProgress?.("❌ 지분증권 데이터 로드 실패", 0, error.message);
+      
+      return {
+        success: false,
+        error: error.message || "지분증권 데이터 로드 실패",
+        data: null
+      };
+    }
+  }
+
+  // 🆕 8. 템플릿 변수 매핑 헬퍼 함수 (수정된 변수 포함)
+  static mapToTemplateVariables(data: Record<string, any>) {
+    return {
+      // 🆕 현재 날짜 변수 매핑 
+      "{{S1_1A_1}}": data.S1_1A_1 || "",  // 년도 (2025)
+      "{{S1_1A_2}}": data.S1_1A_2 || "",  // 월 (09)
+      "{{S1_1A_3}}": data.S1_1A_3 || "",  // 일 (12)
+
+      // 증권의 종류 매핑
+      "{{S3_2A_1}}": data.S3_2A_1 || "",
+      "{{S3_2A_2}}": data.S3_2A_2 || "",
+      "{{S3_2A_3}}": data.S3_2A_3 || "",
+      "{{S3_2A_4}}": data.S3_2A_4 || "",
+      "{{S3_2A_5}}": data.S3_2A_5 || "",  // ✅ 수정: 모집(매출)총액
+      "{{S3_2A_6}}": data.S3_2A_6 || "",
+
+      // 인수인정보 매핑
+      "{{S3_2C_0}}": data.S3_2C_0 || "",
+      "{{S3_2C_1}}": data.S3_2C_1 || "",
+      "{{S3_2C_2}}": data.S3_2C_2 || "",
+      "{{S3_2C_3}}": data.S3_2C_3 || "",
+      "{{S3_2C_4}}": data.S3_2C_4 || "",  // ✅ 수정: 인수금액
+      "{{S3_2C_5}}": data.S3_2C_5 || "",
+      "{{S3_2C_6}}": data.S3_2C_6 || "",
+
+      // 일반사항 매핑
+      "{{S3_2D_1}}": data.S3_2D_1 || "",
+      "{{S3_2D_2}}": data.S3_2D_2 || "",  // ✅ 수정: 납입기일
+      "{{S3_2D_3}}": data.S3_2D_3 || "",
+      "{{S3_2D_4}}": data.S3_2D_4 || "",
+      "{{S3_2D_5}}": data.S3_2D_5 || "",
+
+      // 자금사용목적 매핑
+      "{{S3_2F_1}}": data.S3_2F_1 || "",
+      "{{S3_2F_2}}": data.S3_2F_2 || "",
+
+      // 신주인수권 매핑
+      "{{S3_2G_1}}": data.S3_2G_1 || "",
+      "{{S3_2G_2}}": data.S3_2G_2 || "",
+
+      // 매출인정보 매핑
+      "{{S3_2H_1}}": data.S3_2H_1 || "",
+      "{{S3_2H_2}}": data.S3_2H_2 || "",
+      "{{S3_2H_3}}": data.S3_2H_3 || "",
+      "{{S3_2H_4}}": data.S3_2H_4 || "",
+      "{{S3_2H_5}}": data.S3_2H_5 || "",
+
+      // 환매청구권 매핑
+      "{{S3_2I_1}}": data.S3_2I_1 || "",
+      "{{S3_2I_2}}": data.S3_2I_2 || "",
+      "{{S3_2I_3}}": data.S3_2I_3 || "",
+      "{{S3_2I_4}}": data.S3_2I_4 || "",
+      "{{S3_2I_5}}": data.S3_2I_5 || "",
+    };
+  }
+
+  // 🆕 9. 배열 데이터를 테이블 형태로 변환하는 헬퍼 함수
+  static generateFundUsageTable(fundUsageData: Array<{se: string, amt: string}>) {
+    if (!fundUsageData || fundUsageData.length === 0) {
+      return "<tr><td colspan='2'>자금사용 목적 정보가 없습니다.</td></tr>";
+    }
+
+    return fundUsageData.map(item => 
+      `<tr><td>${item.se}</td><td>${item.amt}</td></tr>`
+    ).join('\n');
+  }
+
+  static generateSellersTable(sellersData: Array<{hdr: string, rlCmp: string, bfslHdstk: string, slstk: string, atslHdstk: string}>) {
+    if (!sellersData || sellersData.length === 0) {
+      return "<tr><td colspan='5'>매출인 정보가 없습니다.</td></tr>";
+    }
+
+    return sellersData.map(item => 
+      `<tr>
+        <td>${item.hdr}</td>
+        <td>${item.rlCmp}</td>
+        <td>${item.bfslHdstk}</td>
+        <td>${item.slstk}</td>
+        <td>${item.atslHdstk}</td>
+      </tr>`
+    ).join('\n');
+  }
+
+  // 🆕 10. 현재 날짜 변수만 별도로 가져오는 유틸리티 함수
+  static getCurrentDateVariables() {
+    return getCurrentDateVariables();
+  }
+
+  // 🆕 11. 날짜 포맷팅 옵션을 제공하는 함수
+  static getFormattedCurrentDate(format: 'YYYY.MM.DD' | 'YYYY년 M월 D일' | 'separate' = 'separate') {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    switch (format) {
+      case 'YYYY.MM.DD':
+        return `${year}.${month}.${day}`;
+      case 'YYYY년 M월 D일':
+        return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+      case 'separate':
+      default:
+        return { year, month, day };
+    }
+  }
+
 }
 
