@@ -42,11 +42,11 @@ export const useMyPage = () => {
   // 컴포넌트 초기화
   useEffect(() => {
     const checkTokenAndFetchUser = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        navigate("/");
-        return;
-      }
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/");
+      return;
+    }
 
       try {
         const res = await axios.get<UserDto>("/users/me");

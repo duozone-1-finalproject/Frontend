@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { saveDocumentContent, updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
-import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, fillTemplate, ensureReadOnlyMode } from '../../lib/dart-viewer/dartViewerHelpers'
-import { ValidationResponse, TemplateData } from '../../types/dartViewer'
+import { updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
+import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, ensureReadOnlyMode } from '../../lib/dartViewerHelpers'
+import { ValidationResponse } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
@@ -9,7 +9,6 @@ export interface UseDocumentContentProps {
   sectionId: string
   sectionName?: string
   sectionType?: 'part' | 'section-1' | 'section-2'
-  templateData?: TemplateData | null
   onSectionModified?: (sectionId: string, modifiedHtml: string) => void
   onValidateSection?: (sectionId: string, htmlContent: string) => void
 }
@@ -20,7 +19,6 @@ export function useDocumentContent({
   sectionId,
   sectionName,
   sectionType,
-  templateData,
   onSectionModified,
   onValidateSection
 }: UseDocumentContentProps) {
@@ -52,9 +50,9 @@ export function useDocumentContent({
   // 컨텐츠 로딩
   useEffect(() => {
     const loadContent = () => {
-      if (!htmlContent || !templateData) {
-        if (!htmlContent) setHasError(true)
-        return
+      if (!htmlContent) {
+        setHasError(true);
+        return;
       }
       setIsLoading(true)
       setHasError(false)
@@ -98,39 +96,6 @@ export function useDocumentContent({
           }
         }
         
-        // 템플릿 데이터가 있으면 적용
-        if (templateData) {
-          console.log('🔥 [DocumentContent] 템플릿 데이터 적용 시작')
-          console.log('📊 [DocumentContent] 템플릿 데이터 키들:', Object.keys(templateData))
-          
-          const beforeLength = processedHtml.length;
-          processedHtml = fillTemplate(processedHtml, templateData);
-          const afterLength = processedHtml.length;
-          
-          console.log('✅ [DocumentContent] 템플릿 적용 완료')
-          console.log(`📏 [DocumentContent] HTML 길이 변화: ${beforeLength} → ${afterLength}`)
-          
-          // 템플릿이 적용된 일부를 로그로 확인
-          const templateKeys = Object.keys(templateData);
-          (templateKeys as (keyof TemplateData)[]).forEach(key => {
-            const value = templateData[key];
-            if (value && typeof value === 'string') {
-              const keyExists = processedHtml.includes(value);
-              console.log(`🔍 [DocumentContent] 키 "${key}" = "${value}" → HTML에 존재: ${keyExists}`);
-            }
-          });
-          if (!hasSavedRef.current) {
-            hasSavedRef.current = true
-            const sectionKey = getSectionKeyFromId(sectionId)
-        
-            saveDocumentContent(userId, sectionKey, processedHtml)
-              .then(() => console.log("💾 [DocumentContent] 치환된 HTML 자동 저장 완료"))
-              .catch(err => console.error("❌ [DocumentContent] 자동 저장 실패:", err))
-          }
-        } else {
-          console.log('⚠️ [DocumentContent] 템플릿 데이터 없음 - 원본 HTML 사용')
-        }
-
         if (iframeRef.current) {
           const iframeDoc = iframeRef.current.contentDocument
           if (iframeDoc) {
@@ -152,7 +117,7 @@ export function useDocumentContent({
       }
     }
     loadContent()
-  }, [htmlContent, sectionId, sectionName, sectionType, templateData])
+  }, [htmlContent, sectionId, sectionName, sectionType])
 
   const handleEdit = () => {
     if (!iframeRef.current) return
@@ -194,14 +159,14 @@ export function useDocumentContent({
       editedHtml = iframeDoc.documentElement.outerHTML
 
       const sectionKey = getSectionKeyFromId(sectionId)
-
-      if (sectionName && sectionType && sectionType !== 'part') {
-        result = await updateDocumentSection(userId, htmlContent, sectionName, sectionType, editedHtml, sectionKey)
-      } else {
-        result = await saveDocumentContent(userId, sectionKey, editedHtml)
+      const options = {
+        htmlContent,
+        sectionName,
+        sectionType,
       }
+
+      result = await updateDocumentSection(userId, sectionKey, editedHtml, options);
       
-      const finalHtml = result.data || editedHtml
       setCurrentHtml(editedHtml)
       setOriginalHtml(editedHtml)
       setIsEditing(false)

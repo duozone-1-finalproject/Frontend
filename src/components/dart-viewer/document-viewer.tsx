@@ -1,12 +1,12 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Loader2, Plus, Home } from 'lucide-react'
-import { Button } from './ui/button'
+import { Button } from '../common/Button'
 import { TableOfContents } from './table-of-contents'
 import { DocumentContent } from './document-content'
 import { VersionSelector } from './version-selector'
 import { useDocumentViewer } from '../../hooks/dart-viewer/useDocumentViewer'
-import { mockDocumentData } from '../../lib/dart-viewer/dartViewerHelpers'
+import { mockDocumentData } from '../../lib/dartViewerHelpers'
 
 export function DocumentViewer() {
   const navigate = useNavigate()
@@ -25,7 +25,6 @@ export function DocumentViewer() {
     toggleLeftPanel,
     isCreatingVersion,
     isLoadingSection,
-    templateData,
     handleSectionModified,
     handleCreateNewVersion,
     handleDeleteEditingVersion,
@@ -151,10 +150,6 @@ export function DocumentViewer() {
               sectionName={currentSection?.sectionName}
               sectionType={currentSection?.type}
               onSectionModified={handleSectionModified}
-              templateData={templateData}
-              onValidateSection={(sectionId, htmlContent) => {
-                console.log('섹션 검증 완료:', sectionId, htmlContent.length);
-              }}
             />
           )}
         </div>

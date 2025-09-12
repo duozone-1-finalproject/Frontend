@@ -45,6 +45,7 @@ export interface DocumentContentProps {
 }
 
 
+
 export type PayloadOptions = {
   user_id: number;
   version?: string;
@@ -126,3 +127,4 @@ export interface TemplateData {
 }
 
 export type AiAnnotationState = 'loading' | 'success' | 'error';
+

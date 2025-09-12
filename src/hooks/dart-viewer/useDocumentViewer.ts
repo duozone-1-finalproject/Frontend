@@ -1,42 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { mockDocumentData, getSectionKeyFromId, findSectionById } from "../../lib/dart-viewer/dartViewerHelpers";
-import type { VersionInfo, TemplateData } from "../../types/dartViewer";
+import { mockDocumentData, getSectionKeyFromId, findSectionById } from "../../lib/dartViewerHelpers";
+import type { VersionInfo } from "../../types/dartViewer";
 import { dartViewerApi } from "../../api/dartViewerApi";
 import { loadFullProjectState, getVersionSections, createNewVersion } from "../../service/dartViewerService";
 
 export function useDocumentViewer(userId: number) {
-  // Template data from sessionStorage (MainPage에서 생성된 데이터)
-  const [templateData, setTemplateData] = useState<TemplateData | null>(null);
-  const [isTemplateLoading, setIsTemplateLoading] = useState(true);
-  const [templateError, setTemplateError] = useState<string | null>(null);
-
-  // Load template data from sessionStorage
-  useEffect(() => {
-    const loadTemplateData = () => {
-      try {
-        setIsTemplateLoading(true);
-        const storedData = sessionStorage.getItem('securitiesTemplateData');
-        if (storedData) {
-          const parsedData = JSON.parse(storedData);
-          console.log('🎯 [useDocumentViewer] 템플릿 데이터 로드 성공:', parsedData);
-          setTemplateData(parsedData);
-          setTemplateError(null);
-        } else {
-          console.log('📝 [useDocumentViewer] sessionStorage에 템플릿 데이터 없음');
-          setTemplateData(null);
-          setTemplateError('템플릿 데이터가 없습니다. 메인 페이지에서 먼저 증권신고서를 생성해주세요.');
-        }
-      } catch (error: any) {
-        console.error('❌ [useDocumentViewer] 템플릿 데이터 로드 오류:', error);
-        setTemplateData(null);
-        setTemplateError(error.message || '템플릿 데이터 로드 실패');
-      } finally {
-        setIsTemplateLoading(false);
-      }
-    };
-
-    loadTemplateData();
-  }, []);
 
   // State
   const [selectedSection, setSelectedSection] = useState<string>(() => {
@@ -70,13 +38,15 @@ export function useDocumentViewer(userId: number) {
     const loadProjectState = async () => {
       try {
         const state = await loadFullProjectState(userId);
+        
         setCurrentVersion(state.currentVersion);
         setVersions(state.versions);
         setModifiedSections(state.modifiedSections);
         setVersionSectionsData(state.sectionsData);
         setSectionSpecificData({}); // Initialize section-specific cache
+        
       } catch (error) {
-        console.error("프로젝트 상태 로드 오류:", error);
+        console.error("❌ [useDocumentViewer] 프로젝트 상태 로드 오류:", error);
       }
     };
 
@@ -85,20 +55,20 @@ export function useDocumentViewer(userId: number) {
 
   // Sync current section HTML with section-specific data priority
   useEffect(() => {
-    if (!selectedSection || !versionSectionsData) return;
+    if (!selectedSection || !versionSectionsData) {
+      return;
+    }
 
     const sectionKey = getSectionKeyFromId(selectedSection);
     const sectionSpecificKey = `${sectionKey}-${selectedSection}`;
     
     // Check section-specific data first, then fall back to general section data
     const htmlContent = sectionSpecificData[sectionSpecificKey] ?? versionSectionsData[sectionKey] ?? "";
+    
     setCurrentSectionHTML(htmlContent);
   }, [selectedSection, versionSectionsData, sectionSpecificData]);
 
-  const currentSection = useMemo(
-    () => findSectionById(mockDocumentData, selectedSection),
-    [selectedSection]
-  );
+  const currentSection = findSectionById(mockDocumentData, selectedSection);
 
   const toggleLeftPanel = () => setIsLeftPanelCollapsed((prev) => !prev);
 
@@ -257,10 +227,7 @@ export function useDocumentViewer(userId: number) {
     isCreatingVersion,
     isLoadingSection,
     
-    // Template data
-    templateData,
-    isTemplateLoading,
-    templateError,
+    // Template data는 더 이상 필요하지 않음 (DB에서 직접 HTML 로드)
     
     // Actions
     handleSectionModified,

@@ -1,21 +1,9 @@
 'use client'
 
-import React from 'react'
-import { Button } from './ui/button'
+import { Button } from '../common/Button'
 import { Edit3, X, AlertCircle, CheckCircle } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
-import { TemplateData } from '../../types/dartViewer'
-
-interface DocumentContentProps {
-  userId: number,
-  htmlContent: string
-  sectionId: string
-  sectionName?: string
-  sectionType?: 'part' | 'section-1' | 'section-2'
-  onSectionModified?: (sectionId: string, updatedHTML: string) => void
-  templateData?: TemplateData | null
-  onValidateSection?: (sectionId: string, htmlContent: string) => void
-}
+import { DocumentContentProps } from '../../types/dartViewer'
 
 export function DocumentContent({ 
   userId,
@@ -24,8 +12,7 @@ export function DocumentContent({
   sectionName, 
   sectionType,
   onSectionModified,
-  templateData,
-  onValidateSection
+  modifiedSections
 }: DocumentContentProps) {
   const {
     isLoading,
@@ -51,9 +38,7 @@ export function DocumentContent({
     sectionId,
     sectionName,
     sectionType,
-    templateData,
     onSectionModified,
-    onValidateSection
   })
 
   if (!htmlContent) {
