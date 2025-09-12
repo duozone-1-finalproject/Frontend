@@ -26,6 +26,7 @@ export function DocumentContent({
     isValidating,
     validationMessage,
     validationResult,
+    hasValidationData,
     validationStep,
     validationProgress,
     iframeRef,
@@ -36,7 +37,10 @@ export function DocumentContent({
     handleRetry,
     handleValidate,
     clearValidationResult,
-    highlightValidationIssues
+    highlightValidationIssues,
+    setValidationMessage,
+    setValidationResult,
+    hideValidationMessage
   } = useDocumentContent({
     userId,
     htmlContent,
@@ -89,25 +93,13 @@ export function DocumentContent({
                 ) : '검증'}
               </Button>
               
-              {/* 검증 결과가 있을 때 추가 편집 버튼 */}
-              {validationResult && validationResult.issues.length > 0 && (
-                <Button
-                  onClick={handleEdit}
-                  size="sm"
-                  variant="outline"
-                  className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  <Edit3 className="w-4 h-4 mr-1" />
-                  검증결과 반영하여 편집
-                </Button>
-              )}
             </>
         )}
 
         {isEditing && (
             <div className="flex items-center gap-2">
-                {/* 검증 패널 토글 버튼 */}
-                {validationResult && validationResult.issues.length > 0 && (
+                {/* 검증 패널 토글 버튼 - 편집 중에는 항상 표시 */}
+                {hasValidationData && (
                   <Button
                     onClick={() => setShowValidationPanel(!showValidationPanel)}
                     size="sm"
@@ -226,8 +218,18 @@ export function DocumentContent({
             ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
             : 'bg-red-100 text-red-800 border border-red-200'
         }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{validationMessage}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{validationMessage}</span>
+            </div>
+            <button
+              onClick={() => {
+                hideValidationMessage()
+              }}
+              className="p-1 hover:bg-black hover:bg-opacity-10 rounded-md transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
           
           {validationResult && validationResult.issues.length > 0 && (
@@ -239,28 +241,6 @@ export function DocumentContent({
               문제점 상세보기
             </button>
           )}
-        </div>
-      )}
-
-      {isEditing && (
-        <div className={`absolute top-16 z-20 bg-blue-100 text-blue-800 p-3 rounded-md shadow-md max-w-sm transition-all duration-300 ${
-          showValidationPanel ? 'right-[25rem]' : 'right-4'
-        }`}>
-          <div className="flex items-center gap-2">
-            <Edit3 className="w-4 h-4" />
-            <span className="text-sm font-medium">편집 중</span>
-          </div>
-          <p className="text-xs mt-1">
-            문서 내용을 직접 클릭하여 수정할 수 있습니다.
-            {validationResult && validationResult.issues.length > 0 && (
-              <>
-              <br />
-              <span className="text-orange-700 font-medium">
-                검증창에서 문제점을 확인하며 수정하세요.
-              </span>
-              </>
-            )}
-          </p>
         </div>
       )}
       

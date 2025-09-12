@@ -32,6 +32,7 @@ export function useDocumentContent({
   const [isValidating, setIsValidating] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [validationResult, setValidationResult] = useState<ValidationResponse | null>(null)
+  const [hasValidationData, setHasValidationData] = useState(false) // 검증 데이터 존재 여부 (편집용)
   const [validationStep, setValidationStep] = useState(0)
   const [validationProgress, setValidationProgress] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -257,6 +258,11 @@ export function useDocumentContent({
   const handleValidate = async () => {
     if (!iframeRef.current) return
     
+    // 새 검증 시작 시 이전 결과 초기화
+    setValidationMessage('')
+    setValidationResult(null)
+    setHasValidationData(false)
+    
     setIsValidating(true)
     setValidationStep(1)
     setValidationProgress(0)
@@ -304,6 +310,7 @@ export function useDocumentContent({
         const validationData = result.validationData as ValidationResponse
         console.log('Validation data:', validationData)
         setValidationResult(validationData)
+        setHasValidationData(true) // 검증 데이터 존재 표시
         
         // 텍스트 하이라이팅 적용
         highlightValidationIssues(validationData)
@@ -344,10 +351,7 @@ export function useDocumentContent({
       setValidationStep(0)
       setValidationProgress(0)
       
-      // 8초 후 검증 메시지 자동 삭제 (페이드아웃 효과와 함께)
-      setTimeout(() => {
-        setValidationMessage('')
-      }, 8000)
+      // 검증 결과 메시지를 계속 표시 (자동 삭제하지 않음)
     }
   }
 
@@ -355,6 +359,12 @@ export function useDocumentContent({
   const clearValidationResult = () => {
     setValidationResult(null)
     setValidationMessage('')
+  }
+
+  // 검증 메시지만 숨기기 (편집용 데이터는 보존)
+  const hideValidationMessage = () => {
+    setValidationMessage('')
+    // hasValidationData는 그대로 두어 편집 시 검증창 버튼이 계속 보이도록 함
   }
 
   // 텍스트 하이라이팅 함수
@@ -504,6 +514,7 @@ export function useDocumentContent({
     isValidating,
     validationMessage,
     validationResult,
+    hasValidationData,
     validationStep,
     validationProgress,
     
@@ -518,6 +529,9 @@ export function useDocumentContent({
     handleRetry,
     handleValidate,
     clearValidationResult,
-    highlightValidationIssues
+    highlightValidationIssues,
+    setValidationMessage,
+    setValidationResult,
+    hideValidationMessage
   }
 }

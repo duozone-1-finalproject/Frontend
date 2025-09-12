@@ -98,7 +98,7 @@ export const dartViewerApi = {
   },
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
-    const res = await fetch('http://localhost:8085/check', {
+    const res = await fetch('http://localhost:8081/check', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
