@@ -305,6 +305,7 @@ export class SecuritiesDataService {
       onProgress?.("🤖 AI 모델 분석 시작", 40, "회사 데이터를 AI에게 전달하는 중...");
       console.log("🤖 [AI Request] 주식 공모 주석 생성 시작");
 
+      // 🚨 AI 요청 시에는 날짜 변수 제외 (기존 구조 유지)
       const equityRequestData = {
         company_name: templateData.company_name || "",
         ceo_name: templateData.ceo_name || null,
@@ -330,6 +331,8 @@ export class SecuritiesDataService {
         S4_11C_3: templateData.S4_11C_3 || "",
         S4_11C_4: templateData.S4_11C_4 || "",
         S4_11C_5: templateData.S4_11C_5 || ""
+        // 💡 S1_1A_1, S1_1A_2, S1_1A_3 날짜 변수는 AI 요청에서 제외
+        // AI 서버가 예상하지 못한 새로운 필드로 인한 오류 방지
       };
 
       console.log("🤖 [AI Request] 요청 데이터:", equityRequestData);

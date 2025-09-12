@@ -193,6 +193,7 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({ isOpen, 
                   onSelectCompany(corpCode);
                 }} />
         </div>
+        
       </>
     </Modal>
   );
