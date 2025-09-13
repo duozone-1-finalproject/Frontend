@@ -7,11 +7,12 @@ import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
 import { ValidationPanel } from './ValidationPanel'
 import { useState } from 'react'
 
-export function DocumentContent({ 
+export function DocumentContent({
   userId,
-  htmlContent, 
-  sectionId, 
-  sectionName, 
+  corpCode,
+  htmlContent,
+  sectionId,
+  sectionName,
   sectionType,
   onSectionModified,
   modifiedSections
@@ -48,6 +49,7 @@ export function DocumentContent({
     handleAIRevision
   } = useDocumentContent({
     userId,
+    corpCode,
     htmlContent,
     sectionId,
     sectionName,

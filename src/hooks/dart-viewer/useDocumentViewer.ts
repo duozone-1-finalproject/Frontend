@@ -4,7 +4,7 @@ import type { VersionInfo } from "../../types/dartViewer";
 import { dartViewerApi } from "../../api/dartViewerApi";
 import { loadFullProjectState, getVersionSections, createNewVersion } from "../../service/dartViewerService";
 
-export function useDocumentViewer(userId: number) {
+export function useDocumentViewer(userId: number, corpCode: string | null) {
 
   // State
   const [selectedSection, setSelectedSection] = useState<string>(() => {
@@ -37,7 +37,8 @@ export function useDocumentViewer(userId: number) {
   useEffect(() => {
     const loadProjectState = async () => {
       try {
-        const state = await loadFullProjectState(userId);
+        if (!corpCode) return;
+        const state = await loadFullProjectState(userId, corpCode);
         
         setCurrentVersion(state.currentVersion);
         setVersions(state.versions);
@@ -51,7 +52,7 @@ export function useDocumentViewer(userId: number) {
     };
 
     loadProjectState();
-  }, [userId]);
+  }, [userId, corpCode]);
 
   // Sync current section HTML with section-specific data priority
   useEffect(() => {
@@ -77,9 +78,11 @@ export function useDocumentViewer(userId: number) {
     setModifiedSections(newModifiedSections);
 
     try {
-      await dartViewerApi.patchEditingVersion({ 
-        user_id: userId, 
-        modifiedSections: Array.from(newModifiedSections) 
+      if (!corpCode) return;
+      await dartViewerApi.patchEditingVersion({
+        user_id: userId,
+        corp_code: corpCode,
+        modifiedSections: Array.from(newModifiedSections)
       });
       
       const sectionKey = getSectionKeyFromId(sectionId);
@@ -119,13 +122,15 @@ export function useDocumentViewer(userId: number) {
         return; // User cancelled
       }
       
-      const result = await createNewVersion(userId, description || undefined);
+      if (!corpCode) return;
+      const result = await createNewVersion(userId, corpCode, description || undefined);
 
       if (result.success) {
         localStorage.removeItem("selectedSection");
         
         // Reload state and clear section-specific cache
-        const state = await loadFullProjectState(userId);
+        if (!corpCode) return;
+        const state = await loadFullProjectState(userId, corpCode);
         setCurrentVersion(state.currentVersion);
         setModifiedSections(state.modifiedSections);
         setVersions(state.versions);
@@ -149,7 +154,8 @@ export function useDocumentViewer(userId: number) {
     if (!window.confirm("편집중인 버전을 삭제하시겠습니까?")) return;
     
     try {
-      await dartViewerApi.deleteEditingVersion(userId);
+      if (!corpCode) return;
+      await dartViewerApi.deleteEditingVersion({ user_id: userId, corp_code: corpCode });
       alert("삭제가 완료되었습니다!");
       localStorage.removeItem("selectedSection");
       setTimeout(() => window.location.reload(), 1000);
@@ -172,10 +178,11 @@ export function useDocumentViewer(userId: number) {
     
     try {
       // 전체 프로젝트 상태를 다시 로드하여 정확한 modifiedSections를 가져옴
-      const fullState = await loadFullProjectState(userId);
+      if (!corpCode) return;
+      const fullState = await loadFullProjectState(userId, corpCode);
       
       // 섹션 데이터 로드
-      const sectionsData = await getVersionSections(version, userId);
+      const sectionsData = await getVersionSections(version, userId, corpCode);
       
       // 모든 상태를 한번에 업데이트하여 렌더링 최적화
       setCurrentVersion(version);

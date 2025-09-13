@@ -4,9 +4,13 @@ import { DBVersionData, ProjectState, VersionInfo, TemplateData } from "../types
 import { dartViewerApi } from "../api/dartViewerApi";
 
 
-export async function fetchVersionsFromDB(userId: number): Promise<DBVersionData> {
+export async function fetchVersionsFromDB(userId: number, corpCode: string): Promise<DBVersionData> {
   try {
-    const response = await dartViewerApi.fetchVersions(userId);
+    const payload = createPayload({
+      user_id: userId, 
+      corp_code: corpCode,
+    });
+    const response = await dartViewerApi.fetchVersions(payload);
     return response;
   } catch (error) {
     console.error('DB에서 버전 데이터 가져오기 오류:', error);
@@ -14,9 +18,9 @@ export async function fetchVersionsFromDB(userId: number): Promise<DBVersionData
   }
 }
 
-export async function loadFullProjectState(userId: number): Promise<ProjectState & { sectionsData: Record<string, string> }> {
+export async function loadFullProjectState(userId: number, corpCode: string): Promise<ProjectState & { sectionsData: Record<string, string> }> {
   try {
-    const versionsData = await fetchVersionsFromDB(userId);
+    const versionsData = await fetchVersionsFromDB(userId, corpCode);
     const versionKeys = Object.keys(versionsData);
     
     if (!versionsData || versionKeys.length === 0) {
@@ -67,10 +71,11 @@ export async function loadFullProjectState(userId: number): Promise<ProjectState
   }
 }
 
-export async function createNewVersion(userId: number, description: string | undefined) {
+export async function createNewVersion(userId: number, corpCode: string, description: string | undefined) {
   try {
     const payload = createPayload({
-      user_id: userId, 
+      user_id: userId,
+      corp_code: corpCode,
       description: description || "설명 없음"
     });
     const response = await dartViewerApi.finalizeVersion(payload); 
@@ -83,9 +88,9 @@ export async function createNewVersion(userId: number, description: string | und
   }
 }
 
-export async function getVersionSections(version: string, userId: number): Promise<Record<string, string>> {
+export async function getVersionSections(version: string, userId: number, corpCode: string): Promise<Record<string, string>> {
   try {
-    const versionsData = await fetchVersionsFromDB(userId)
+    const versionsData = await fetchVersionsFromDB(userId, corpCode)
     
     if (!versionsData[version]) {
       throw new Error(`버전 ${version}을 찾을 수 없습니다.`)
@@ -109,6 +114,7 @@ export async function getVersionSections(version: string, userId: number): Promi
 
 export async function updateDocumentSection(
   userId: number,
+  corpCode: string,
   sectionKey: string,
   editedHtml: string,
   options: {
@@ -141,6 +147,7 @@ export async function updateDocumentSection(
 
     const payload = createPayload({
       user_id: userId,
+      corp_code: corpCode,
       description: "편집중인 버전",
       sectionsData: { [sectionKey]: finalHtml }
     });
@@ -156,8 +163,8 @@ export async function updateDocumentSection(
 
 // 템플릿 데이터를 적용한 v0 버전 생성
 export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
-  try {    
-    const versionsData = await fetchVersionsFromDB(userId);
+  try {
+    const versionsData = await fetchVersionsFromDB(userId, templateData.corp_code);
 
     if (versionsData.v0) {
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
@@ -174,6 +181,7 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
     // v0 버전으로 DB 저장
     const payload = createPayload({
       user_id: userId,
+      corp_code: templateData.corp_code,
       version: "v0",
       version_number: 0,
       description: `${templateData.company_name} 증권신고서 초기 버전`,

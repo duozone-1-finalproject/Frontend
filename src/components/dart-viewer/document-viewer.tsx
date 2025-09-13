@@ -8,9 +8,13 @@ import { VersionSelector } from './version-selector'
 import { useDocumentViewer } from '../../hooks/dart-viewer/useDocumentViewer'
 import { mockDocumentData } from '../../lib/dartViewerHelpers'
 
-export function DocumentViewer() {
+interface DocumentViewerProps {
+  corpCode: string | null;
+}
+
+export function DocumentViewer({ corpCode }: DocumentViewerProps) {
   const navigate = useNavigate()
-  
+
   const {
     selectedSection,
     setSelectedSection,
@@ -29,7 +33,7 @@ export function DocumentViewer() {
     handleCreateNewVersion,
     handleDeleteEditingVersion,
     handleSwitchVersion,
-  } = useDocumentViewer(123456)
+  } = useDocumentViewer(123456, corpCode)
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -145,6 +149,7 @@ export function DocumentViewer() {
           ) : (
             <DocumentContent
               userId={123456}
+              corpCode={corpCode}
               htmlContent={currentSectionHTML}
               sectionId={selectedSection}
               sectionName={currentSection?.sectionName}

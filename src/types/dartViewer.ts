@@ -36,6 +36,7 @@ export interface DocumentSection {
 
 export interface DocumentContentProps {
   userId: number;
+  corpCode: string | null;
   htmlContent: string;
   sectionId: string;
   sectionName?: string;
@@ -48,6 +49,7 @@ export interface DocumentContentProps {
 
 export type PayloadOptions = {
   user_id: number;
+  corp_code: string;
   version?: string;
   version_number?: number;
   description?: string;
@@ -95,6 +97,7 @@ export interface HighlightedText {
 
 
 export interface TemplateData {
+  corp_code: string;
   company_name: string;
   ceo_name: string;
   address: string;

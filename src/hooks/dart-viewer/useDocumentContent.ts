@@ -5,6 +5,7 @@ import { ValidationResponse, ValidationIssue } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
+  corpCode: string | null
   htmlContent: string
   sectionId: string
   sectionName?: string
@@ -15,6 +16,7 @@ export interface UseDocumentContentProps {
 
 export function useDocumentContent({
   userId,
+  corpCode,
   htmlContent,
   sectionId,
   sectionName,
@@ -168,7 +170,10 @@ export function useDocumentContent({
         sectionType,
       }
 
-      result = await updateDocumentSection(userId, sectionKey, editedHtml, options);
+      if (!corpCode) {
+        throw new Error('corpCode가 필요합니다.');
+      }
+      result = await updateDocumentSection(userId, corpCode, sectionKey, editedHtml, options);
       
       setCurrentHtml(editedHtml)
       setOriginalHtml(editedHtml)

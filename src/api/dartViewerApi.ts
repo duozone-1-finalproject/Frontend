@@ -11,11 +11,11 @@ const makeHeaders = (): HeadersInit => {
 };
 
 export const dartViewerApi = {
-  fetchVersions: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions?userId=${userId}`, {
+  fetchVersions: async (payload: unknown) => {
+    const res = await fetch(`http://localhost:8080/api/versions`, {
       method: "GET",
       headers: makeHeaders(),
-      cache: "no-store",
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
@@ -81,13 +81,11 @@ export const dartViewerApi = {
     return res.json();
   },
 
-  deleteEditingVersion: async (userId: number) => {
+  deleteEditingVersion: async (payload: unknown) => {
     const res = await fetch(`http://localhost:8080/api/versions/editing`, {
       method: 'DELETE',
       headers: makeHeaders(),
-      body: JSON.stringify({
-        user_id: userId,
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
@@ -124,7 +122,6 @@ export const dartViewerApi = {
       throw new Error("Failed to revise section")
     }
 
-    // 서버가 단순 텍스트를 반환하므로 text()로 받기
     return res.text();
   }
 };

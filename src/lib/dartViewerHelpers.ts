@@ -548,6 +548,7 @@ export function isLeafSection(section: DocumentSection | null): boolean {
 export function createPayload(options: PayloadOptions): Record<string, unknown> {
   const {
     user_id,
+    corp_code,
     version,
     version_number,
     description = "편집중인 버전",
@@ -557,6 +558,7 @@ export function createPayload(options: PayloadOptions): Record<string, unknown> 
 
   const payload: Record<string, unknown> = {
     user_id,
+    corp_code,
     description,
     createdAt,
   };
