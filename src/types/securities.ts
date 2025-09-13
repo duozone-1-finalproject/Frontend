@@ -227,6 +227,16 @@ export interface AINotesData {
   S4_NOTE1_5: string;
 }
 
+// 사업보고서 데이터
+export interface BizReportResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    recepNo : string,
+    htmlContent: string
+  };
+}
+
 // AI 응답 전 템플릿 데이터 타입 
 export type BeforeAITemplateData = BaseTemplateData & RiskData;
 
