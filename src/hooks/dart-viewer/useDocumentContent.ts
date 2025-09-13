@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
+import { updateDocumentSection, validateSectionContent, reviseSectionContent } from '../../service/dartViewerService'
 import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, ensureReadOnlyMode } from '../../lib/dartViewerHelpers'
-import { ValidationResponse } from '../../types/dartViewer'
+import { ValidationResponse, ValidationIssue } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
@@ -32,6 +32,7 @@ export function useDocumentContent({
   const [isValidating, setIsValidating] = useState(false)
   const [validationMessage, setValidationMessage] = useState('')
   const [validationResult, setValidationResult] = useState<ValidationResponse | null>(null)
+  const [hasValidationData, setHasValidationData] = useState(false) // 검증 데이터 존재 여부 (편집용)
   const [validationStep, setValidationStep] = useState(0)
   const [validationProgress, setValidationProgress] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -257,6 +258,11 @@ export function useDocumentContent({
   const handleValidate = async () => {
     if (!iframeRef.current) return
     
+    // 새 검증 시작 시 이전 결과 초기화
+    setValidationMessage('')
+    setValidationResult(null)
+    setHasValidationData(false)
+    
     setIsValidating(true)
     setValidationStep(1)
     setValidationProgress(0)
@@ -304,6 +310,7 @@ export function useDocumentContent({
         const validationData = result.validationData as ValidationResponse
         console.log('Validation data:', validationData)
         setValidationResult(validationData)
+        setHasValidationData(true) // 검증 데이터 존재 표시
         
         // 텍스트 하이라이팅 적용
         highlightValidationIssues(validationData)
@@ -344,10 +351,7 @@ export function useDocumentContent({
       setValidationStep(0)
       setValidationProgress(0)
       
-      // 8초 후 검증 메시지 자동 삭제 (페이드아웃 효과와 함께)
-      setTimeout(() => {
-        setValidationMessage('')
-      }, 8000)
+      // 검증 결과 메시지를 계속 표시 (자동 삭제하지 않음)
     }
   }
 
@@ -355,6 +359,44 @@ export function useDocumentContent({
   const clearValidationResult = () => {
     setValidationResult(null)
     setValidationMessage('')
+  }
+
+  // 검증 메시지만 숨기기 (편집용 데이터는 보존)
+  const hideValidationMessage = () => {
+    setValidationMessage('')
+    // hasValidationData는 그대로 두어 편집 시 검증창 버튼이 계속 보이도록 함
+  }
+
+  // AI를 통한 자동 수정
+  const handleAIRevision = async (issue: ValidationIssue) => {
+    try {
+      console.log('AI 수정 시작:', issue)
+
+      // AI 수정 요청
+      const revisionResult = await reviseSectionContent({
+        span: issue.span,
+        reason: issue.reason,
+        rule_id: issue.rule_id || '',
+        evidence: issue.evidence || '',
+        suggestion: issue.suggestion,
+        severity: issue.severity
+      })
+      console.log("AI 수정 결과:", revisionResult)
+
+      if (!revisionResult.success || !revisionResult.revisedText) {
+        return { success: false, message: revisionResult.message || 'AI 수정에 실패했습니다.' }
+      }
+
+      return { 
+        success: true, 
+        message: 'AI 수정된 텍스트가 준비되었습니다.',
+        revisedText: revisionResult.revisedText
+      }
+
+    } catch (error: any) {
+      console.error('AI 수정 처리 오류:', error)
+      return { success: false, message: 'AI 수정 중 오류가 발생했습니다.' }
+    }
   }
 
   // 텍스트 하이라이팅 함수
@@ -405,32 +447,49 @@ export function useDocumentContent({
       if (!spanText) return
 
       try {
-        // 여러 가지 방식으로 텍스트 찾기
+        // 다양한 방식으로 텍스트 찾기 (우선순위 순)
         const searchTexts = [
-          spanText,
+          spanText, // 원본 텍스트
           spanText.replace(/\s+/g, ' '), // 공백 정규화
+          spanText.replace(/[\r\n\t]+/g, ' ').trim(), // 개행문자, 탭 제거
+          spanText.replace(/[^\w\s가-힣]/g, '').trim(), // 특수문자 제거 (한글, 영문, 숫자, 공백만)
+          spanText.substring(0, 50), // 앞 50글자
           spanText.substring(0, 30), // 앞 30글자
+          spanText.substring(0, 20), // 앞 20글자
+          spanText.substring(0, 15), // 앞 15글자
+          spanText.substring(spanText.length - 30), // 뒤 30글자
+          spanText.substring(spanText.length - 20), // 뒤 20글자
+          spanText.substring(spanText.length - 15), // 뒤 15글자
           spanText.split('\n')[0].trim(), // 첫 번째 줄
-        ]
+          spanText.split('\n').pop()?.trim(), // 마지막 줄
+          spanText.split(' ').slice(0, 5).join(' '), // 처음 5단어
+          spanText.split(' ').slice(-5).join(' '), // 마지막 5단어
+          spanText.split(' ').slice(0, 3).join(' '), // 처음 3단어
+          spanText.split(' ').slice(-3).join(' '), // 마지막 3단어
+          spanText.replace(/\d+/g, '').trim(), // 숫자 제거
+          spanText.replace(/[(){}[\]]/g, '').trim(), // 괄호 제거
+          spanText.substring(10, spanText.length - 10), // 양쪽 10글자씩 제거한 중간 부분
+        ].filter(text => text && text.length >= 3) // 3글자 이상만 유효
 
         let found = false
-        
+
         for (const searchText of searchTexts) {
           if (found || !searchText) continue
+
+          // 전체 body 텍스트에서 검색 (대소문자 구분 없이)
+          const bodyText = (iframeDoc.body.innerText || iframeDoc.body.textContent || '').toLowerCase()
+          const searchTextLower = searchText.toLowerCase()
+          if (!bodyText.includes(searchTextLower)) continue
           
-          // 전체 body 텍스트에서 검색
-          const bodyText = iframeDoc.body.innerText || iframeDoc.body.textContent || ''
-          if (!bodyText.includes(searchText)) continue
-          
-          // TreeWalker로 텍스트 노드 찾기
+          // TreeWalker로 텍스트 노드 찾기 (대소문자 구분 없이)
           const walker = iframeDoc.createTreeWalker(
             iframeDoc.body,
             NodeFilter.SHOW_TEXT,
             {
               acceptNode: (node) => {
-                const text = node.textContent || ''
-                return text.trim() && text.includes(searchText) 
-                  ? NodeFilter.FILTER_ACCEPT 
+                const text = (node.textContent || '').toLowerCase()
+                return text.trim() && text.includes(searchTextLower)
+                  ? NodeFilter.FILTER_ACCEPT
                   : NodeFilter.FILTER_REJECT
               }
             }
@@ -439,8 +498,9 @@ export function useDocumentContent({
           let textNode
           while (textNode = walker.nextNode() as Text) {
             const text = textNode.textContent || ''
-            const textIndex = text.indexOf(searchText)
-            
+            const textLower = text.toLowerCase()
+            const textIndex = textLower.indexOf(searchTextLower)
+
             if (textIndex !== -1) {
               // 하이라이트 요소 생성
               const highlightSpan = iframeDoc.createElement('span')
@@ -459,7 +519,7 @@ export function useDocumentContent({
               `
               highlightSpan.title = `${issue.reason}\n\n💡 ${issue.suggestion}`
               highlightSpan.setAttribute('data-issue-index', issueIndex.toString())
-              highlightSpan.setAttribute('data-issue-text', searchText)
+              highlightSpan.setAttribute('data-issue-text', spanText)
               
               // 텍스트 분할 및 하이라이트 적용
               const beforeText = text.substring(0, textIndex)
@@ -504,6 +564,7 @@ export function useDocumentContent({
     isValidating,
     validationMessage,
     validationResult,
+    hasValidationData,
     validationStep,
     validationProgress,
     
@@ -518,6 +579,10 @@ export function useDocumentContent({
     handleRetry,
     handleValidate,
     clearValidationResult,
-    highlightValidationIssues
+    highlightValidationIssues,
+    setValidationMessage,
+    setValidationResult,
+    hideValidationMessage,
+    handleAIRevision
   }
 }

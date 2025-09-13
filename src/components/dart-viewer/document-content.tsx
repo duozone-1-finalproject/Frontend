@@ -1,9 +1,10 @@
 'use client'
 
 import { Button } from '../common/Button'
-import { Edit3, X, AlertCircle, CheckCircle, ChevronRight, MapPin } from 'lucide-react'
+import { Edit3, X, AlertCircle, CheckCircle, MapPin } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
+import { ValidationPanel } from './ValidationPanel'
 import { useState } from 'react'
 
 export function DocumentContent({ 
@@ -16,6 +17,9 @@ export function DocumentContent({
   modifiedSections
 }: DocumentContentProps) {
   const [showValidationPanel, setShowValidationPanel] = useState(false)
+  const [aiProcessingIssues, setAiProcessingIssues] = useState<Set<number>>(new Set())
+  const [aiRevisedTexts, setAiRevisedTexts] = useState<Record<number, string>>({})
+  const [clickedCopyButtons, setClickedCopyButtons] = useState<Set<number>>(new Set())
   const {
     isLoading,
     hasError,
@@ -26,6 +30,7 @@ export function DocumentContent({
     isValidating,
     validationMessage,
     validationResult,
+    hasValidationData,
     validationStep,
     validationProgress,
     iframeRef,
@@ -36,7 +41,11 @@ export function DocumentContent({
     handleRetry,
     handleValidate,
     clearValidationResult,
-    highlightValidationIssues
+    highlightValidationIssues,
+    setValidationMessage,
+    setValidationResult,
+    hideValidationMessage,
+    handleAIRevision
   } = useDocumentContent({
     userId,
     htmlContent,
@@ -45,6 +54,182 @@ export function DocumentContent({
     sectionType,
     onSectionModified,
   })
+
+  // 검증 시작 핸들러
+  const handleValidateStart = () => {
+    // 새로운 검증 시작 시 이전 AI 수정된 텍스트들과 클릭 상태 초기화
+    setAiRevisedTexts({})
+    setClickedCopyButtons(new Set())
+    handleValidate()
+  }
+
+  // AI 수정 핸들러
+  const handleAIRevisionClick = async (issue: ValidationIssue, index: number) => {
+    setAiProcessingIssues(prev => new Set(prev).add(index))
+    
+    try {
+      const result = await handleAIRevision(issue)
+      if (result.success && result.revisedText) {
+        // AI 수정된 텍스트를 상태에 저장
+        setAiRevisedTexts(prev => ({
+          ...prev,
+          [index]: result.revisedText
+        }))
+        console.log('AI 수정 성공:', result.message)
+      } else {
+        alert('AI 수정 실패: ' + result.message)
+      }
+    } catch (error) {
+      alert('AI 수정 중 오류가 발생했습니다.')
+    } finally {
+      setAiProcessingIssues(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }
+  }
+
+  // 텍스트 복사 핸들러
+  const handleCopyText = (text: string, index: number) => {
+    // 클릭 애니메이션을 위한 상태 설정
+    setClickedCopyButtons(prev => new Set(prev).add(index))
+    
+    // 클립보드에 복사
+    navigator.clipboard.writeText(text).catch(() => {
+      // 복사 실패해도 조용히 처리
+    })
+    
+    // 2초 후 클릭 상태 제거
+    setTimeout(() => {
+      setClickedCopyButtons(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }, 2000)
+  }
+
+  // 문제 위치로 이동 핸들러
+  const handleNavigateToIssue = (issue: ValidationIssue, index: number) => {
+    // 해당 텍스트가 하이라이트된 위치로 스크롤
+    if (!iframeRef.current) return
+    
+    const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
+    if (!iframeDoc) return
+    
+    console.log('찾는 이슈:', issue.span.substring(0, 50) + '...')
+    
+    // 하이라이트된 요소 중에서 해당 이슈와 매칭되는 것 찾기
+    const highlights = iframeDoc.querySelectorAll('.validation-highlight')
+    console.log('발견된 하이라이트 수:', highlights.length)
+    
+    let targetHighlight: HTMLElement | null = null
+    
+    // 1. 정확한 인덱스로 찾기
+    targetHighlight = Array.from(highlights).find(el => 
+      el.getAttribute('data-issue-index') === index.toString()
+    ) as HTMLElement
+    
+    // 2. 텍스트 내용으로 찾기 (다양한 방법 시도)
+    if (!targetHighlight) {
+      const spanText = issue.span.trim()
+      const searchTexts = [
+        spanText, // 원본 텍스트
+        spanText.replace(/\s+/g, ' '), // 공백 정규화
+        spanText.replace(/[\r\n\t]+/g, ' ').trim(), // 개행문자, 탭 제거
+        spanText.replace(/[^\w\s가-힣]/g, '').trim(), // 특수문자 제거
+        spanText.substring(0, 50), // 앞 50글자
+        spanText.substring(0, 30), // 앞 30글자
+        spanText.substring(0, 20), // 앞 20글자
+        spanText.substring(0, 15), // 앞 15글자
+        spanText.substring(spanText.length - 30), // 뒤 30글자
+        spanText.substring(spanText.length - 20), // 뒤 20글자
+        spanText.substring(spanText.length - 15), // 뒤 15글자
+        spanText.split('\n')[0].trim(), // 첫 번째 줄
+        spanText.split('\n').pop()?.trim(), // 마지막 줄
+        spanText.split(' ').slice(0, 5).join(' '), // 처음 5단어
+        spanText.split(' ').slice(-5).join(' '), // 마지막 5단어
+        spanText.split(' ').slice(0, 3).join(' '), // 처음 3단어
+        spanText.split(' ').slice(-3).join(' '), // 마지막 3단어
+        spanText.replace(/\d+/g, '').trim(), // 숫자 제거
+        spanText.replace(/[(){}[\]]/g, '').trim(), // 괄호 제거
+        spanText.substring(10, spanText.length - 10), // 양쪽 10글자씩 제거한 중간 부분
+      ].filter(text => text && text.length >= 3) // 3글자 이상만 유효
+
+      for (const searchText of searchTexts) {
+        if (targetHighlight || !searchText) break
+
+        targetHighlight = Array.from(highlights).find(el => {
+          const elText = (el.textContent?.trim() || '').toLowerCase()
+          const dataText = (el.getAttribute('data-issue-text') || '').toLowerCase()
+          const searchTextLower = searchText.toLowerCase()
+
+          return elText.includes(searchTextLower) ||
+                 dataText.includes(searchTextLower) ||
+                 searchTextLower.includes(elText) ||
+                 searchTextLower.includes(dataText)
+        }) as HTMLElement
+      }
+    }
+    
+    console.log('찾은 타겟:', targetHighlight)
+    
+    if (targetHighlight) {
+      // 기존 flash 클래스 제거
+      iframeDoc.querySelectorAll('.flash-animation').forEach(el => {
+        el.classList.remove('flash-animation')
+      })
+      
+      // 새로운 flash 애니메이션 추가
+      targetHighlight.classList.add('flash-animation')
+      
+      // 스크롤 이동 (약간의 지연 후)
+      setTimeout(() => {
+        targetHighlight?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        })
+      }, 100)
+      
+      // 3초 후 애니메이션 제거
+      setTimeout(() => {
+        targetHighlight?.classList.remove('flash-animation')
+      }, 3000)
+      
+      console.log('스크롤 이동 완료')
+    } else {
+      console.warn('하이라이트된 텍스트를 찾을 수 없습니다:', issue.span.substring(0, 50))
+      
+      // 대안: 전체 텍스트에서 직접 검색해서 스크롤
+      const allText = iframeDoc.body.innerText || ''
+      if (allText.includes(issue.span.trim().substring(0, 20))) {
+        // 대략적인 위치로 스크롤
+        const range = iframeDoc.createRange()
+        const walker = iframeDoc.createTreeWalker(
+          iframeDoc.body,
+          NodeFilter.SHOW_TEXT,
+          null
+        )
+        
+        let node
+        while (node = walker.nextNode()) {
+          if (node.textContent && node.textContent.includes(issue.span.trim().substring(0, 20))) {
+            range.selectNode(node)
+            const rect = range.getBoundingClientRect()
+            if (rect.height > 0) {
+              node.parentElement?.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              })
+              break
+            }
+          }
+        }
+      }
+    }
+  }
 
   if (!htmlContent) {
     return (
@@ -72,7 +257,7 @@ export function DocumentContent({
                 편집 시작
               </Button>
               <Button
-                onClick={handleValidate}
+                onClick={handleValidateStart}
                 disabled={isValidating}
                 size="sm"
                 variant="outline"
@@ -89,25 +274,13 @@ export function DocumentContent({
                 ) : '검증'}
               </Button>
               
-              {/* 검증 결과가 있을 때 추가 편집 버튼 */}
-              {validationResult && validationResult.issues.length > 0 && (
-                <Button
-                  onClick={handleEdit}
-                  size="sm"
-                  variant="outline"
-                  className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  <Edit3 className="w-4 h-4 mr-1" />
-                  검증결과 반영하여 편집
-                </Button>
-              )}
             </>
         )}
 
         {isEditing && (
             <div className="flex items-center gap-2">
-                {/* 검증 패널 토글 버튼 */}
-                {validationResult && validationResult.issues.length > 0 && (
+                {/* 검증 패널 토글 버튼 - 편집 중에는 항상 표시 */}
+                {hasValidationData && (
                   <Button
                     onClick={() => setShowValidationPanel(!showValidationPanel)}
                     size="sm"
@@ -226,8 +399,18 @@ export function DocumentContent({
             ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
             : 'bg-red-100 text-red-800 border border-red-200'
         }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{validationMessage}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{validationMessage}</span>
+            </div>
+            <button
+              onClick={() => {
+                hideValidationMessage()
+              }}
+              className="p-1 hover:bg-black hover:bg-opacity-10 rounded-md transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
           
           {validationResult && validationResult.issues.length > 0 && (
@@ -239,28 +422,6 @@ export function DocumentContent({
               문제점 상세보기
             </button>
           )}
-        </div>
-      )}
-
-      {isEditing && (
-        <div className={`absolute top-16 z-20 bg-blue-100 text-blue-800 p-3 rounded-md shadow-md max-w-sm transition-all duration-300 ${
-          showValidationPanel ? 'right-[25rem]' : 'right-4'
-        }`}>
-          <div className="flex items-center gap-2">
-            <Edit3 className="w-4 h-4" />
-            <span className="text-sm font-medium">편집 중</span>
-          </div>
-          <p className="text-xs mt-1">
-            문서 내용을 직접 클릭하여 수정할 수 있습니다.
-            {validationResult && validationResult.issues.length > 0 && (
-              <>
-              <br />
-              <span className="text-orange-700 font-medium">
-                검증창에서 문제점을 확인하며 수정하세요.
-              </span>
-              </>
-            )}
-          </p>
         </div>
       )}
       
@@ -306,206 +467,18 @@ export function DocumentContent({
       )}
 
       {/* 검증 결과 상세 패널 */}
-      {showValidationPanel && validationResult && (
-        <div className="absolute inset-y-0 right-0 z-40 w-96 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
-          <div className="h-full flex flex-col">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-red-50">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <h3 className="font-semibold text-gray-800">검증 결과</h3>
-              </div>
-              <button
-                onClick={() => setShowValidationPanel(false)}
-                className="p-1 hover:bg-red-100 rounded-md transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 요약 정보 */}
-            <div className="p-4 bg-gray-50 border-b">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span>심각: {validationResult.issues.filter(i => i.severity === 'high').length}개</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span>보통: {validationResult.issues.filter(i => i.severity === 'medium').length}개</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span>경미: {validationResult.issues.filter(i => i.severity === 'low').length}개</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 문제점 목록 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {validationResult.issues.map((issue, index) => (
-                <div key={index} className={`border rounded-lg p-4 ${
-                  issue.severity === 'high' ? 'border-red-200 bg-red-50' :
-                  issue.severity === 'medium' ? 'border-orange-200 bg-orange-50' :
-                  'border-yellow-200 bg-yellow-50'
-                }`}>
-                  {/* 심각도 배지 */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      issue.severity === 'high' ? 'bg-red-100 text-red-800' :
-                      issue.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {issue.severity === 'high' ? '심각' : issue.severity === 'medium' ? '보통' : '경미'}
-                    </span>
-                    <span className="text-xs text-gray-500">문제 {index + 1}</span>
-                  </div>
-
-                  {/* 문제 텍스트 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">문제 위치:</h4>
-                    <div className="bg-white border rounded p-2 text-sm font-mono text-gray-700 max-h-20 overflow-y-auto">
-                      "{issue.span}"
-                    </div>
-                  </div>
-
-                  {/* 이유 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">문제 이유:</h4>
-                    <p className="text-sm text-gray-600">{issue.reason}</p>
-                  </div>
-
-                  {/* 제안 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">개선 제안:</h4>
-                    <p className="text-sm text-green-700">{issue.suggestion}</p>
-                  </div>
-
-                  {/* 증거 */}
-                  {issue.evidence && (
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-gray-800 mb-1">근거:</h4>
-                      <p className="text-xs text-gray-500">{issue.evidence}</p>
-                    </div>
-                  )}
-
-                  {/* 문제 위치로 이동 버튼 */}
-                  <button 
-                    className={`w-full mt-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                      issue.severity === 'high' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                      issue.severity === 'medium' ? 'bg-orange-600 hover:bg-orange-700 text-white' :
-                      'bg-yellow-600 hover:bg-yellow-700 text-white'
-                    }`}
-                    onClick={() => {
-                      // 해당 텍스트가 하이라이트된 위치로 스크롤
-                      if (!iframeRef.current) return
-                      
-                      const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
-                      if (!iframeDoc) return
-                      
-                      console.log('찾는 이슈:', issue.span.substring(0, 50) + '...')
-                      
-                      // 하이라이트된 요소 중에서 해당 이슈와 매칭되는 것 찾기
-                      const highlights = iframeDoc.querySelectorAll('.validation-highlight')
-                      console.log('발견된 하이라이트 수:', highlights.length)
-                      
-                      let targetHighlight: HTMLElement | null = null
-                      
-                      // 1. 정확한 인덱스로 찾기
-                      targetHighlight = Array.from(highlights).find(el => 
-                        el.getAttribute('data-issue-index') === index.toString()
-                      ) as HTMLElement
-                      
-                      // 2. 텍스트 내용으로 찾기 (여러 방법 시도)
-                      if (!targetHighlight) {
-                        const searchTexts = [
-                          issue.span.trim(),
-                          issue.span.replace(/\s+/g, ' ').trim(),
-                          issue.span.substring(0, 30).trim(),
-                          issue.span.split('\n')[0].trim(),
-                        ]
-                        
-                        for (const searchText of searchTexts) {
-                          if (targetHighlight || !searchText) break
-                          
-                          targetHighlight = Array.from(highlights).find(el => {
-                            const elText = el.textContent?.trim() || ''
-                            const dataText = el.getAttribute('data-issue-text') || ''
-                            return elText.includes(searchText) || 
-                                   dataText.includes(searchText) ||
-                                   searchText.includes(elText) ||
-                                   searchText.includes(dataText)
-                          }) as HTMLElement
-                        }
-                      }
-                      
-                      console.log('찾은 타겟:', targetHighlight)
-                      
-                      if (targetHighlight) {
-                        // 기존 flash 클래스 제거
-                        iframeDoc.querySelectorAll('.flash-animation').forEach(el => {
-                          el.classList.remove('flash-animation')
-                        })
-                        
-                        // 새로운 flash 애니메이션 추가
-                        targetHighlight.classList.add('flash-animation')
-                        
-                        // 스크롤 이동 (약간의 지연 후)
-                        setTimeout(() => {
-                          targetHighlight?.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center',
-                            inline: 'nearest'
-                          })
-                        }, 100)
-                        
-                        // 3초 후 애니메이션 제거
-                        setTimeout(() => {
-                          targetHighlight?.classList.remove('flash-animation')
-                        }, 3000)
-                        
-                        console.log('스크롤 이동 완료')
-                      } else {
-                        console.warn('하이라이트된 텍스트를 찾을 수 없습니다:', issue.span.substring(0, 50))
-                        
-                        // 대안: 전체 텍스트에서 직접 검색해서 스크롤
-                        const allText = iframeDoc.body.innerText || ''
-                        if (allText.includes(issue.span.trim().substring(0, 20))) {
-                          // 대략적인 위치로 스크롤
-                          const range = iframeDoc.createRange()
-                          const walker = iframeDoc.createTreeWalker(
-                            iframeDoc.body,
-                            NodeFilter.SHOW_TEXT,
-                            null
-                          )
-                          
-                          let node
-                          while (node = walker.nextNode()) {
-                            if (node.textContent && node.textContent.includes(issue.span.trim().substring(0, 20))) {
-                              range.selectNode(node)
-                              const rect = range.getBoundingClientRect()
-                              if (rect.height > 0) {
-                                node.parentElement?.scrollIntoView({ 
-                                  behavior: 'smooth', 
-                                  block: 'center' 
-                                })
-                                break
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  >
-                    <ChevronRight className="w-4 h-4 inline mr-1" />
-                    문제 위치로 이동
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <ValidationPanel
+        isVisible={showValidationPanel}
+        validationResult={validationResult}
+        aiProcessingIssues={aiProcessingIssues}
+        aiRevisedTexts={aiRevisedTexts}
+        clickedCopyButtons={clickedCopyButtons}
+        iframeRef={iframeRef}
+        onClose={() => setShowValidationPanel(false)}
+        onAIRevision={handleAIRevisionClick}
+        onCopyText={handleCopyText}
+        onNavigateToIssue={handleNavigateToIssue}
+      />
       
       <iframe
         ref={iframeRef}
