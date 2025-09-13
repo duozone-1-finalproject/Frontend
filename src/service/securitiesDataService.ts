@@ -28,6 +28,7 @@ export class SecuritiesDataService {
 
       const response = await securitiesApi.fetchCompanyData(companyCode);
       const apiData = response.data;
+      const response_etc = await securitiesApi.fetchEtcMatters(apiData.companyOverview?.corpName || "");
 
       onProgress?.("⚙️ 회사 데이터 분석 중", 25, "증권 정보 및 회사 개요 데이터를 구조화하는 중...");
 
@@ -68,6 +69,7 @@ export class SecuritiesDataService {
         establishment_date: apiData.companyOverview?.estDt,
         company_phone: apiData.companyOverview?.phnNo,
         company_website: apiData.companyOverview?.hmUrl,
+        S1_1D_1: response_etc?.data || "",
 
         S4_11A_1: 증권종류?.stksen || "",
         S4_11A_2: formatNumber(증권종류?.stkcnt),
@@ -242,6 +244,7 @@ export class SecuritiesDataService {
       console.log("🤖 [AI Request] 주식 공모 주석 생성 시작");
 
       const equityRequestData: AIAnnotationRequest = {
+        corp_code: templateData.corp_code || "",
         company_name: templateData.company_name || "",
         ceo_name: templateData.ceo_name ?? null,
         address: templateData.address ?? null,
@@ -337,7 +340,7 @@ export class SecuritiesDataService {
   
       // Step 3: 병렬 처리 시작 안내
       onProgress?.("🚀 AI 분석 및 위험요소 조회 동시 시작", 35, "AI 주석 생성과 투자위험요소 데이터를 병렬로 처리합니다...");
-  
+
       // ✨ 핵심: 병렬 처리 - Promise.all 사용
       const [riskResult, aiResult] = await Promise.all([
         // 투자위험요소 데이터 가져오기

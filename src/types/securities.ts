@@ -55,6 +55,7 @@ export interface CompanyDataResponse {
 
 // AI API 요청 타입
 export interface AIAnnotationRequest {
+  corp_code: string;
   company_name: string;
   ceo_name: string | null;
   address: string | null;
@@ -89,6 +90,14 @@ export interface AIAnnotationResponse {
   S4_NOTE1_4: string;
   S4_NOTE1_5: string;
 }
+
+// AI API 응답 타입
+export interface EtcMattersResponse {
+  statusCode: number;
+  message: string;
+  data: string;
+}
+
 
 // 서비스 응답 타입
 export interface SecuritiesServiceResponse<T> {
