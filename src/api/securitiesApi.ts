@@ -4,7 +4,8 @@ import type {
   AIAnnotationRequest, 
   AINotesData, 
   RiskData,
-  EtcMattersResponse
+  EtcMattersResponse,
+  BizReportResponse
 } from '../types/securities';
 
 // Securities API 객체
@@ -72,6 +73,21 @@ export const securitiesApi = {
       }
     } catch (error: any) {
       throw new Error(`AI API 호출 실패: ${error.message}`);
+    }
+  },
+
+  getBizReport: async (companyCode: string): Promise<BizReportResponse> => {
+    try {
+      const response = await axios.get(`/api/dart/reports/latest?corp_code=${companyCode}`);
+      
+      console.log("DART 보고서 응답:", response.data);
+      if (response.data && response.status === 200) {
+        return response.data;
+      } else {
+        throw new Error("DART 보고서 API 응답 오류");
+      }
+    } catch (error: any) {
+      throw new Error(`DART API 호출 실패: ${error.message}`);
     }
   }
 };
