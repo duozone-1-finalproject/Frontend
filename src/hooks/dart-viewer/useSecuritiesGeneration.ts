@@ -35,7 +35,7 @@ export const useSecuritiesGeneration = () => {
         setGeneratedData(result.data);
         
         // 즉시 v0 버전으로 DB에 저장 (템플릿 적용된 상태로)
-        const userId = 123;
+        const userId = 123456;
         const v0Result = await createV0WithTemplateData(userId, result.data);
         
         if (v0Result.success) {
