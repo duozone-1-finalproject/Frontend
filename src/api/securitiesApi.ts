@@ -3,7 +3,8 @@ import type {
   CompanyDataResponse, 
   AIAnnotationRequest, 
   AINotesData, 
-  RiskData
+  RiskData,
+  EtcMattersResponse
 } from '../types/securities';
 
 // Securities API 객체
@@ -19,6 +20,24 @@ export const securitiesApi = {
       }
     } catch (error: any) {
       throw new Error(`DART API 호출 실패: ${error.message}`);
+    }
+  },
+
+  fetchEtcMatters: async (corpName: string): Promise<EtcMattersResponse> => {
+    try {
+      const response = await axios.get('/api/dart/reports/etc-matters', {
+        params: {
+          corp_name: corpName
+        }
+      });
+      
+      if (response.data && response.status === 200) {
+        return response.data;
+      } else {
+        throw new Error("기타사항 보고서 API 응답 오류");
+      }
+    } catch (error: any) {
+      throw new Error(`기타사항 보고서 API 호출 실패: ${error.message}`);
     }
   },
 
