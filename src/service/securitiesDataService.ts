@@ -11,7 +11,8 @@ import type {
   GenerateSecuritiesDataResponse,
   ProgressCallback,
   BeforeAITemplateData,
-  RiskApiResponse
+  RiskApiResponse,
+  BizData
 } from '../types/securities';
 
 // 메인 데이터 서비스 클래스
@@ -30,7 +31,6 @@ export class SecuritiesDataService {
       const response = await securitiesApi.fetchCompanyData(companyCode);
       const apiData = response.data;
       const response_etc = await securitiesApi.fetchEtcMatters(apiData.companyOverview?.corpName || "");
-
       onProgress?.("⚙️ 회사 데이터 분석 중", 25, "증권 정보 및 회사 개요 데이터를 구조화하는 중...");
 
       // 각 그룹별로 데이터 추출
@@ -211,37 +211,73 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
     };
   }
 }
-  // 1. 템플릿 데이터 가져오기 (진행 상황 추가) - 레거시 호환용
-  static async fetchTemplateData(companyCode: string = '01571107', onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BeforeAITemplateData>> {
-    try {
-      // 기본 회사 데이터 가져오기
-      const basicDataResult = await this.fetchBasicCompanyData(companyCode, onProgress);
-      if (!basicDataResult.success) {
-        throw new Error(basicDataResult.error);
-      }
 
-      // 위험요소 데이터 가져오기
-      const riskDataResult = await this.fetchRiskData(companyCode, onProgress);
-
-      // 데이터 통합
-      const combinedData: BeforeAITemplateData = {
-        ...basicDataResult.data!,
-        ...riskDataResult.data!
-      };
-
+// 사업보고서 데이터만 가져오기
+static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BizData>> {
+  try {
+    onProgress?.("📊 사업보고서 데이터 조회 중", 30, "DART에서 최신 사업보고서를 가져오는 중...");
+    console.log(`📋 [Biz Report Request] 사업보고서 요청 시작: ${companyCode}`);
+    
+    const bizData: BizData = await securitiesApi.getBizReport(companyCode);
+    
+    console.log("🔎 [Biz Report Response] bizData:", bizData);
+    console.log("🔎 [Biz Report Keys]:", Object.keys(bizData || {}));
+    console.log("htmlContent length:", bizData?.htmlContent?.length);
+    
+    if (bizData) {
+      console.log("✅ [Biz Report Success] 사업보고서 데이터 조회 완료");
+      
       return {
         success: true,
-        data: combinedData,
+        data: bizData
       };
-    } catch (error: any) {
-      console.error("❌ [Data Error] 템플릿 데이터 로딩 실패:", error);
-      return {
-        success: false,
-        error: error.message || "템플릿 데이터 로드 실패",
-        data: null
-      };
+    } else {
+      throw new Error("사업보고서 데이터가 null입니다");
     }
+    
+  } catch (error: any) {
+    console.error("❌ [Biz Report Error] 사업보고서 데이터 로딩 실패:", error);
+    onProgress?.("❌ 사업보고서 로드 실패", 0, error.message);
+    
+    return {
+      success: false,
+      error: error.message || "사업보고서 데이터 로드 실패",
+      data: null
+    };
   }
+}
+
+  // // 1. 템플릿 데이터 가져오기 (진행 상황 추가) - 레거시 호환용
+  // static async fetchTemplateData(companyCode: string = '01571107', onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BeforeAITemplateData>> {
+  //   try {
+  //     // 기본 회사 데이터 가져오기
+  //     const basicDataResult = await this.fetchBasicCompanyData(companyCode, onProgress);
+  //     if (!basicDataResult.success) {
+  //       throw new Error(basicDataResult.error);
+  //     }
+
+  //     // 위험요소 데이터 가져오기
+  //     const riskDataResult = await this.fetchRiskData(companyCode, onProgress);
+
+  //     // 데이터 통합
+  //     const combinedData: BeforeAITemplateData = {
+  //       ...basicDataResult.data!,
+  //       ...riskDataResult.data!
+  //     };
+
+  //     return {
+  //       success: true,
+  //       data: combinedData,
+  //     };
+  //   } catch (error: any) {
+  //     console.error("❌ [Data Error] 템플릿 데이터 로딩 실패:", error);
+  //     return {
+  //       success: false,
+  //       error: error.message || "템플릿 데이터 로드 실패",
+  //       data: null
+  //     };
+  //   }
+  // }
 
   // 2. AI 주석 생성 요청 (진행 상황 추가)
   static async requestEquityAnnotations(templateData: Record<string, any>, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<AINotesData>> {
@@ -346,9 +382,8 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
   
       // Step 3: 병렬 처리 시작 안내
       onProgress?.("🚀 AI 분석 및 위험요소 조회 동시 시작", 35, "AI 주석 생성과 투자위험요소 데이터를 병렬로 처리합니다...");
-
       // ✨ 핵심: 병렬 처리 - Promise.all 사용
-      const [riskResult, aiResult] = await Promise.all([
+      const [riskResult, aiResult, bizResult] = await Promise.all([
         // 투자위험요소 데이터 가져오기
         this.fetchRiskData(companyCode, (step, progress, details) => {
           onProgress?.(`🔍 ${step}`, Math.max(40, progress), details);
@@ -356,13 +391,21 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
         
         // AI 주석 생성 (기본 회사 데이터 사용)
         this.requestEquityAnnotations(basicDataResult.data, (step, progress, details) => {
-          onProgress?.(`🤖 ${step}`, Math.max(50, progress), details);
+          onProgress?.(`${step}`, Math.max(50, progress), details);
+        }),
+        
+        this.fetchBizReport(companyCode, (step, progress, details) => {
+          onProgress?.(`📋 ${step}`, Math.max(30, progress), details);
         })
       ]);
   
-      // Step 4: 병렬 처리 완료
-      onProgress?.("🎯 병렬 처리 완료", 75, `AI 주석: ${aiResult.success ? '성공' : '실패'} | 위험요소: ${riskResult.success ? '성공' : '실패'}`);
+      // Step 4: 병렬 처리 완료 (3개 결과 모두 포함)
+      onProgress?.("🎯 병렬 처리 완료", 75, 
+        `AI 주석: ${aiResult.success ? '성공' : '실패'} | 위험요소: ${riskResult.success ? '성공' : '실패'} | 사업보고서: ${bizResult.success ? '성공' : '실패'}`
+      );
       await this.delay(200);
+      
+      
 
       // Step 5: 데이터 통합
       onProgress?.("📋 데이터 통합 및 검증 중", 85, "모든 데이터를 통합하는 중...");
@@ -370,8 +413,11 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
       const finalTemplateData: SecuritiesTemplateData = {
         ...basicDataResult.data,  // 기본 회사 데이터
         ...riskResult.data!,       // 투자위험요소 데이터
-        ...aiResult.data!         // AI 생성 주석
+        ...aiResult.data! ,        // AI 생성 주석
+        ...bizResult.data!         // 사업보고서 데이터
       };
+
+      
 
       await this.delay(200);
 
@@ -445,95 +491,95 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
     return await this.requestEquityAnnotations(templateData);
   }
 
-  // 🆕 7. 지분증권 데이터만 가져오기 (새로 추가)
-  static async fetchEquitySecuritiesDataOnly(companyCode: string, onProgress?: ProgressCallback) {
-    try {
-      onProgress?.("📡 지분증권 데이터 조회 중", 20, "DART API에서 지분증권 데이터를 가져오는 중...");
+  // // 🆕 7. 지분증권 데이터만 가져오기 (새로 추가)
+  // static async fetchEquitySecuritiesDataOnly(companyCode: string, onProgress?: ProgressCallback) {
+  //   try {
+  //     onProgress?.("📡 지분증권 데이터 조회 중", 20, "DART API에서 지분증권 데이터를 가져오는 중...");
       
-      const result = await this.fetchBasicCompanyData(companyCode, onProgress);
+  //     const result = await this.fetchBasicCompanyData(companyCode, onProgress);
       
-      if (result.success && result.data) {
-        // 지분증권 관련 데이터만 추출
-        const equityData = {
-          // 증권의 종류
-          securities: {
-            S3_2A_1: result.data.S3_2A_1, // 증권의종류
-            S3_2A_2: result.data.S3_2A_2, // 증권수량
-            S3_2A_3: result.data.S3_2A_3, // 액면가액
-            S3_2A_4: result.data.S3_2A_4, // 모집(매출)가액
-            S3_2A_5: result.data.S3_2A_5, // 모집(매출)총액 ✅ 수정됨
-            S3_2A_6: result.data.S3_2A_6, // 모집(매출)방법
-          },
-          // 인수인정보
-          underwriter: {
-            S3_2C_0: result.data.S3_2C_0, // 인수(주선)인
-            S3_2C_1: result.data.S3_2C_1, // 인수인 회사명
-            S3_2C_2: result.data.S3_2C_2, // 증권의종류
-            S3_2C_3: result.data.S3_2C_3, // 인수수량
-            S3_2C_4: result.data.S3_2C_4, // 인수금액 ✅ 수정됨
-            S3_2C_5: result.data.S3_2C_5, // 인수대가
-            S3_2C_6: result.data.S3_2C_6, // 인수방법
-          },
-          // 일반사항
-          general: {
-            S3_2D_1: result.data.S3_2D_1, // 청약기일
-            S3_2D_2: result.data.S3_2D_2, // 납입기일 ✅ 수정됨
-            S3_2D_3: result.data.S3_2D_3, // 청약공고일
-            S3_2D_4: result.data.S3_2D_4, // 배정공고일
-            S3_2D_5: result.data.S3_2D_5, // 배정기준일
-          },
-          // 자금의 사용 목적
-          fundUsage: {
-            S3_2F_1: result.data.S3_2F_1, // 구분
-            S3_2F_2: result.data.S3_2F_2, // 금액
-            S3_2F_DATA: result.data.S3_2F_DATA, // 전체 자금사용 목적 배열
-          },
-          // 신주인수권에 관한 사항
-          stockRights: {
-            S3_2G_1: result.data.S3_2G_1, // 행사대상증권
-            S3_2G_2: result.data.S3_2G_2, // 행사가격
-          },
-          // 매출인에 관한 사항
-          sellers: {
-            S3_2H_1: result.data.S3_2H_1, // 보유자
-            S3_2H_2: result.data.S3_2H_2, // 회사와의 관계
-            S3_2H_3: result.data.S3_2H_3, // 매출전 보유증권수
-            S3_2H_4: result.data.S3_2H_4, // 매출증권수
-            S3_2H_5: result.data.S3_2H_5, // 매출후 보유증권수
-            S3_2H_DATA: result.data.S3_2H_DATA, // 전체 매출인 정보 배열
-          },
-          // 일반청약자환매청구권
-          redemption: {
-            S3_2I_1: result.data.S3_2I_1, // 부여사유
-            S3_2I_2: result.data.S3_2I_2, // 행사가능 투자자
-            S3_2I_3: result.data.S3_2I_3, // 부여수량
-            S3_2I_4: result.data.S3_2I_4, // 행사기간
-            S3_2I_5: result.data.S3_2I_5, // 행사가격
-          }
-        };
+  //     if (result.success && result.data) {
+  //       // 지분증권 관련 데이터만 추출
+  //       const equityData = {
+  //         // 증권의 종류
+  //         securities: {
+  //           S3_2A_1: result.data.S3_2A_1, // 증권의종류
+  //           S3_2A_2: result.data.S3_2A_2, // 증권수량
+  //           S3_2A_3: result.data.S3_2A_3, // 액면가액
+  //           S3_2A_4: result.data.S3_2A_4, // 모집(매출)가액
+  //           S3_2A_5: result.data.S3_2A_5, // 모집(매출)총액 ✅ 수정됨
+  //           S3_2A_6: result.data.S3_2A_6, // 모집(매출)방법
+  //         },
+  //         // 인수인정보
+  //         underwriter: {
+  //           S3_2C_0: result.data.S3_2C_0, // 인수(주선)인
+  //           S3_2C_1: result.data.S3_2C_1, // 인수인 회사명
+  //           S3_2C_2: result.data.S3_2C_2, // 증권의종류
+  //           S3_2C_3: result.data.S3_2C_3, // 인수수량
+  //           S3_2C_4: result.data.S3_2C_4, // 인수금액 ✅ 수정됨
+  //           S3_2C_5: result.data.S3_2C_5, // 인수대가
+  //           S3_2C_6: result.data.S3_2C_6, // 인수방법
+  //         },
+  //         // 일반사항
+  //         general: {
+  //           S3_2D_1: result.data.S3_2D_1, // 청약기일
+  //           S3_2D_2: result.data.S3_2D_2, // 납입기일 ✅ 수정됨
+  //           S3_2D_3: result.data.S3_2D_3, // 청약공고일
+  //           S3_2D_4: result.data.S3_2D_4, // 배정공고일
+  //           S3_2D_5: result.data.S3_2D_5, // 배정기준일
+  //         },
+  //         // 자금의 사용 목적
+  //         fundUsage: {
+  //           S3_2F_1: result.data.S3_2F_1, // 구분
+  //           S3_2F_2: result.data.S3_2F_2, // 금액
+  //           S3_2F_DATA: result.data.S3_2F_DATA, // 전체 자금사용 목적 배열
+  //         },
+  //         // 신주인수권에 관한 사항
+  //         stockRights: {
+  //           S3_2G_1: result.data.S3_2G_1, // 행사대상증권
+  //           S3_2G_2: result.data.S3_2G_2, // 행사가격
+  //         },
+  //         // 매출인에 관한 사항
+  //         sellers: {
+  //           S3_2H_1: result.data.S3_2H_1, // 보유자
+  //           S3_2H_2: result.data.S3_2H_2, // 회사와의 관계
+  //           S3_2H_3: result.data.S3_2H_3, // 매출전 보유증권수
+  //           S3_2H_4: result.data.S3_2H_4, // 매출증권수
+  //           S3_2H_5: result.data.S3_2H_5, // 매출후 보유증권수
+  //           S3_2H_DATA: result.data.S3_2H_DATA, // 전체 매출인 정보 배열
+  //         },
+  //         // 일반청약자환매청구권
+  //         redemption: {
+  //           S3_2I_1: result.data.S3_2I_1, // 부여사유
+  //           S3_2I_2: result.data.S3_2I_2, // 행사가능 투자자
+  //           S3_2I_3: result.data.S3_2I_3, // 부여수량
+  //           S3_2I_4: result.data.S3_2I_4, // 행사기간
+  //           S3_2I_5: result.data.S3_2I_5, // 행사가격
+  //         }
+  //       };
 
-        onProgress?.("✅ 지분증권 데이터 추출 완료", 100, "모든 지분증권 데이터가 성공적으로 매핑되었습니다.");
+  //       onProgress?.("✅ 지분증권 데이터 추출 완료", 100, "모든 지분증권 데이터가 성공적으로 매핑되었습니다.");
         
-        console.log("✅ [Equity Securities] 지분증권 데이터만 추출 완료:", equityData);
+  //       console.log("✅ [Equity Securities] 지분증권 데이터만 추출 완료:", equityData);
         
-        return {
-          success: true,
-          data: equityData
-        };
-      } else {
-        throw new Error(result.error || "지분증권 데이터 로드 실패");
-      }
-    } catch (error: any) {
-      console.error("❌ [Equity Securities Error] 지분증권 데이터 로딩 실패:", error);
-      onProgress?.("❌ 지분증권 데이터 로드 실패", 0, error.message);
+  //       return {
+  //         success: true,
+  //         data: equityData
+  //       };
+  //     } else {
+  //       throw new Error(result.error || "지분증권 데이터 로드 실패");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("❌ [Equity Securities Error] 지분증권 데이터 로딩 실패:", error);
+  //     onProgress?.("❌ 지분증권 데이터 로드 실패", 0, error.message);
       
-      return {
-        success: false,
-        error: error.message || "지분증권 데이터 로드 실패",
-        data: null
-      };
-    }
-  }
+  //     return {
+  //       success: false,
+  //       error: error.message || "지분증권 데이터 로드 실패",
+  //       data: null
+  //     };
+  //   }
+  // }
 
   // 🆕 8. 템플릿 변수 매핑 헬퍼 함수 (수정된 변수 포함)
   static mapToTemplateVariables(data: Record<string, any>) {
