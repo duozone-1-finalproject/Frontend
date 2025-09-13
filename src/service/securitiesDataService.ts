@@ -10,7 +10,8 @@ import type {
   SecuritiesTemplateData,
   GenerateSecuritiesDataResponse,
   ProgressCallback,
-  BeforeAITemplateData
+  BeforeAITemplateData,
+  RiskApiResponse
 } from '../types/securities';
 
 // 메인 데이터 서비스 클래스
@@ -164,45 +165,50 @@ export class SecuritiesDataService {
     }
   }
 
-  // 1-2. 투자위험요소 데이터만 가져오기 (느린 API)
-  static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<RiskData>> {
-    try {
-      onProgress?.("🔍 투자위험요소 데이터 조회 중", 40, "AI 투자위험요소 정보를 가져오는 중...");
-      console.log(`📊 [Risk Request] 회사 투자위험요소 요청 시작: ${companyCode}`);
-      
-      const responseRisk = await securitiesApi.fetchRiskData(companyCode);
-      
-      console.log("🔎 [Risk Response Raw] response_lisk.data:", responseRisk);
-      
-      if (responseRisk) {
-        const riskData = {
-          S3_1A_1: responseRisk?.S3_1A_1 || "",
-          S3_1B_1: responseRisk?.S3_1B_1 || "",
-          S3_1C_1: responseRisk?.S3_1C_1 || "",
-        };
-
-        console.log("✅ [Risk Success] 투자위험요소 데이터 조회 완료:", riskData);
-        return {
-          success: true,
-          data: riskData
-        };
-      } else {
-        throw new Error("투자위험요소 API 응답 오류");
-      }
-    } catch (error: any) {
-      console.error("❌ [Risk Error] 투자위험요소 데이터 로딩 실패:", error);
-      return {
-        success: false,
-        error: error.message || "투자위험요소 데이터 로드 실패",
-        data: {
-          S3_1A_1: "",
-          S3_1B_1: "",
-          S3_1C_1: "",
-        }
+// 1-2. 투자위험요소 데이터만 가져오기 (수정된 버전)
+static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<RiskData>> {
+  try {
+    onProgress?.("🔍 투자위험요소 데이터 조회 중", 40, "AI 투자위험요소 정보를 가져오는 중...");
+    console.log(`📊 [Risk Request] 회사 투자위험요소 요청 시작: ${companyCode}`);
+    
+    // securitiesApi.fetchRiskData가 이미 RiskData를 반환함
+    const riskData: RiskData = await securitiesApi.fetchRiskData(companyCode);
+    
+    console.log("🔎 [Risk Response] riskData:", riskData);
+    console.log("🔎 [Risk Keys]:", Object.keys(riskData || {}));
+    console.log("S3_1A_1", riskData?.S3_1A_1);
+    console.log("S3_1B_1", riskData?.S3_1B_1);
+    console.log("S3_1C_1", riskData?.S3_1C_1);
+    
+    if (riskData) {
+      const processedData: RiskData = {
+        S3_1A_1: riskData.S3_1A_1 || "",
+        S3_1B_1: riskData.S3_1B_1 || "",
+        S3_1C_1: riskData.S3_1C_1 || "",
       };
-    }
-  }
 
+      console.log("✅ [Risk Success] 투자위험요소 데이터 조회 완료:", processedData);
+      return {
+        success: true,
+        data: processedData
+      };
+    } else {
+      throw new Error("투자위험요소 데이터가 null입니다");
+    }
+    
+  } catch (error: any) {
+    console.error("❌ [Risk Error] 투자위험요소 데이터 로딩 실패:", error);
+    return {
+      success: false,
+      error: error.message || "투자위험요소 데이터 로드 실패",
+      data: {
+        S3_1A_1: "",
+        S3_1B_1: "",
+        S3_1C_1: "",
+      }
+    };
+  }
+}
   // 1. 템플릿 데이터 가져오기 (진행 상황 추가) - 레거시 호환용
   static async fetchTemplateData(companyCode: string = '01571107', onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BeforeAITemplateData>> {
     try {
@@ -242,6 +248,7 @@ export class SecuritiesDataService {
       console.log("🤖 [AI Request] 주식 공모 주석 생성 시작");
 
       const equityRequestData: AIAnnotationRequest = {
+        corp_code: templateData.corp_code || "",
         company_name: templateData.company_name || "",
         ceo_name: templateData.ceo_name ?? null,
         address: templateData.address ?? null,
@@ -633,4 +640,5 @@ export class SecuritiesDataService {
   }
 
 }
+
 

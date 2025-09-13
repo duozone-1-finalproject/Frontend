@@ -55,6 +55,7 @@ export interface CompanyDataResponse {
 
 // AI API 요청 타입
 export interface AIAnnotationRequest {
+  corp_code: string;
   company_name: string;
   ceo_name: string | null;
   address: string | null;
@@ -199,6 +200,14 @@ export interface RiskData {
   S3_1A_1: string;
   S3_1B_1: string;
   S3_1C_1: string;
+}
+
+// 투자위험요소 API 응답 타입 (새로 추가)
+export interface RiskApiResponse {
+  data: RiskData;
+  // 필요하면 다른 프로퍼티들도 추가 가능
+  status?: string;
+  message?: string;
 }
 
 // AI 주석 데이터

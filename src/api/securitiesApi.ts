@@ -27,7 +27,12 @@ export const securitiesApi = {
       const response = await axios.get(`/api/v1/variables/mapping/${companyCode}`);
       
       if (response.data && response.status === 200) {
-        return response.data;
+        // 🔥 실제 데이터는 response.data.data에 있음
+        if (response.data.result === 'SUCCESS' && response.data.data) {
+          return response.data.data;  // 실제 RiskData 반환
+        } else {
+          throw new Error(`변수 매핑 실패: ${response.data.message || '알 수 없는 오류'}`);
+        }
       } else {
         throw new Error("변수 매핑 API 응답 오류");
       }
