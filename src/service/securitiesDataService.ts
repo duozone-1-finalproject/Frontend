@@ -11,7 +11,8 @@ import type {
   GenerateSecuritiesDataResponse,
   ProgressCallback,
   BeforeAITemplateData,
-  RiskApiResponse
+  RiskApiResponse,
+  BizData
 } from '../types/securities';
 
 // 메인 데이터 서비스 클래스
@@ -210,6 +211,42 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
     };
   }
 }
+
+// 사업보고서 데이터만 가져오기
+static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BizData>> {
+  try {
+    onProgress?.("📊 사업보고서 데이터 조회 중", 30, "DART에서 최신 사업보고서를 가져오는 중...");
+    console.log(`📋 [Biz Report Request] 사업보고서 요청 시작: ${companyCode}`);
+    
+    const bizData: BizData = await securitiesApi.getBizReport(companyCode);
+    
+    console.log("🔎 [Biz Report Response] bizData:", bizData);
+    console.log("🔎 [Biz Report Keys]:", Object.keys(bizData || {}));
+    console.log("htmlContent length:", bizData?.htmlContent?.length);
+    
+    if (bizData) {
+      console.log("✅ [Biz Report Success] 사업보고서 데이터 조회 완료");
+      
+      return {
+        success: true,
+        data: bizData
+      };
+    } else {
+      throw new Error("사업보고서 데이터가 null입니다");
+    }
+    
+  } catch (error: any) {
+    console.error("❌ [Biz Report Error] 사업보고서 데이터 로딩 실패:", error);
+    onProgress?.("❌ 사업보고서 로드 실패", 0, error.message);
+    
+    return {
+      success: false,
+      error: error.message || "사업보고서 데이터 로드 실패",
+      data: null
+    };
+  }
+}
+
   // // 1. 템플릿 데이터 가져오기 (진행 상황 추가) - 레거시 호환용
   // static async fetchTemplateData(companyCode: string = '01571107', onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BeforeAITemplateData>> {
   //   try {
@@ -345,9 +382,8 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
   
       // Step 3: 병렬 처리 시작 안내
       onProgress?.("🚀 AI 분석 및 위험요소 조회 동시 시작", 35, "AI 주석 생성과 투자위험요소 데이터를 병렬로 처리합니다...");
-      const res_biz=await securitiesApi.getBizReport(companyCode);
       // ✨ 핵심: 병렬 처리 - Promise.all 사용
-      const [riskResult, aiResult] = await Promise.all([
+      const [riskResult, aiResult, bizResult] = await Promise.all([
         // 투자위험요소 데이터 가져오기
         this.fetchRiskData(companyCode, (step, progress, details) => {
           onProgress?.(`🔍 ${step}`, Math.max(40, progress), details);
@@ -356,11 +392,17 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
         // AI 주석 생성 (기본 회사 데이터 사용)
         this.requestEquityAnnotations(basicDataResult.data, (step, progress, details) => {
           onProgress?.(`${step}`, Math.max(50, progress), details);
+        }),
+        
+        this.fetchBizReport(companyCode, (step, progress, details) => {
+          onProgress?.(`📋 ${step}`, Math.max(30, progress), details);
         })
       ]);
   
-      // Step 4: 병렬 처리 완료
-      onProgress?.("🎯 병렬 처리 완료", 75, `AI 주석: ${aiResult.success ? '성공' : '실패'} | 위험요소: ${riskResult.success ? '성공' : '실패'}`);
+      // Step 4: 병렬 처리 완료 (3개 결과 모두 포함)
+      onProgress?.("🎯 병렬 처리 완료", 75, 
+        `AI 주석: ${aiResult.success ? '성공' : '실패'} | 위험요소: ${riskResult.success ? '성공' : '실패'} | 사업보고서: ${bizResult.success ? '성공' : '실패'}`
+      );
       await this.delay(200);
       
       
@@ -372,7 +414,7 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
         ...basicDataResult.data,  // 기본 회사 데이터
         ...riskResult.data!,       // 투자위험요소 데이터
         ...aiResult.data! ,        // AI 생성 주석
-        ...res_biz.data!         // 사업보고서 데이터
+        ...bizResult.data!         // 사업보고서 데이터
       };
 
       

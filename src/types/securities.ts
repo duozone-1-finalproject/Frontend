@@ -204,8 +204,13 @@ export interface BaseTemplateData {
 }
 
 export interface BizTemplateData {
-    recepNo : string,
     htmlContent: string
+}
+
+// 사업보고서
+export interface BizData {
+  recepNo: string;
+  htmlContent: string;
 }
 
 // 투자위험요소 데이터
@@ -234,12 +239,8 @@ export interface AINotesData {
 
 // 사업보고서 데이터
 export interface BizReportResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    recepNo : string,
-    htmlContent: string
-  };
+  recepNo : string,
+  htmlContent: string
 }
 
 // AI 응답 전 템플릿 데이터 타입 
@@ -257,8 +258,8 @@ export type AiAnnotationState = 'loading' | 'success' | 'error';
 // 최종 서비스 응답 타입
 export interface GenerateSecuritiesDataResponse {
   success: boolean;
-  data: SecuritiesTemplateData | null;
   aiAnnotationState: AiAnnotationState;
+  data: SecuritiesTemplateData | null;
   riskDataState: AiAnnotationState;
   error: string | null;
   duration: number;

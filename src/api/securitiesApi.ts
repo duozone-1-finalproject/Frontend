@@ -5,7 +5,8 @@ import type {
   AINotesData, 
   RiskData,
   EtcMattersResponse,
-  BizReportResponse
+  BizReportResponse,
+  BizData
 } from '../types/securities';
 
 // Securities API 객체
@@ -76,13 +77,13 @@ export const securitiesApi = {
     }
   },
 
-  getBizReport: async (companyCode: string): Promise<BizReportResponse> => {
+  getBizReport: async (companyCode: string): Promise<BizData> => {
     try {
       const response = await axios.get(`/api/dart/reports/latest?corp_code=${companyCode}`);
       
       console.log("DART 보고서 응답:", response.data);
       if (response.data && response.status === 200) {
-        return response.data;
+        return response.data.data;
       } else {
         throw new Error("DART 보고서 API 응답 오류");
       }
