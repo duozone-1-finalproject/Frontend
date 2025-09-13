@@ -83,7 +83,7 @@ const CompanyList: React.FC<CompanyListProps> = ({ companies, isLoading, onSelec
 
   const handleSelectCompany = (company: Company) => {
   // window.confirm이 true(예)를 반환하면 asd 함수 실행
-  if (window.confirm(`'${company.corpName}'을(를 선택하시겠습니까?`)) {
+  if (window.confirm(`'${company.corpName}'을(를) 선택하시겠습니까?`)) {
     onSelectCompany(company.corpCode);
   }
   };

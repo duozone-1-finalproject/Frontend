@@ -131,25 +131,44 @@ export function DocumentContent({
       el.getAttribute('data-issue-index') === index.toString()
     ) as HTMLElement
     
-    // 2. 텍스트 내용으로 찾기 (여러 방법 시도)
+    // 2. 텍스트 내용으로 찾기 (다양한 방법 시도)
     if (!targetHighlight) {
+      const spanText = issue.span.trim()
       const searchTexts = [
-        issue.span.trim(),
-        issue.span.replace(/\s+/g, ' ').trim(),
-        issue.span.substring(0, 30).trim(),
-        issue.span.split('\n')[0].trim(),
-      ]
-      
+        spanText, // 원본 텍스트
+        spanText.replace(/\s+/g, ' '), // 공백 정규화
+        spanText.replace(/[\r\n\t]+/g, ' ').trim(), // 개행문자, 탭 제거
+        spanText.replace(/[^\w\s가-힣]/g, '').trim(), // 특수문자 제거
+        spanText.substring(0, 50), // 앞 50글자
+        spanText.substring(0, 30), // 앞 30글자
+        spanText.substring(0, 20), // 앞 20글자
+        spanText.substring(0, 15), // 앞 15글자
+        spanText.substring(spanText.length - 30), // 뒤 30글자
+        spanText.substring(spanText.length - 20), // 뒤 20글자
+        spanText.substring(spanText.length - 15), // 뒤 15글자
+        spanText.split('\n')[0].trim(), // 첫 번째 줄
+        spanText.split('\n').pop()?.trim(), // 마지막 줄
+        spanText.split(' ').slice(0, 5).join(' '), // 처음 5단어
+        spanText.split(' ').slice(-5).join(' '), // 마지막 5단어
+        spanText.split(' ').slice(0, 3).join(' '), // 처음 3단어
+        spanText.split(' ').slice(-3).join(' '), // 마지막 3단어
+        spanText.replace(/\d+/g, '').trim(), // 숫자 제거
+        spanText.replace(/[(){}[\]]/g, '').trim(), // 괄호 제거
+        spanText.substring(10, spanText.length - 10), // 양쪽 10글자씩 제거한 중간 부분
+      ].filter(text => text && text.length >= 3) // 3글자 이상만 유효
+
       for (const searchText of searchTexts) {
         if (targetHighlight || !searchText) break
-        
+
         targetHighlight = Array.from(highlights).find(el => {
-          const elText = el.textContent?.trim() || ''
-          const dataText = el.getAttribute('data-issue-text') || ''
-          return elText.includes(searchText) || 
-                 dataText.includes(searchText) ||
-                 searchText.includes(elText) ||
-                 searchText.includes(dataText)
+          const elText = (el.textContent?.trim() || '').toLowerCase()
+          const dataText = (el.getAttribute('data-issue-text') || '').toLowerCase()
+          const searchTextLower = searchText.toLowerCase()
+
+          return elText.includes(searchTextLower) ||
+                 dataText.includes(searchTextLower) ||
+                 searchTextLower.includes(elText) ||
+                 searchTextLower.includes(dataText)
         }) as HTMLElement
       }
     }

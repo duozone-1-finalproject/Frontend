@@ -447,32 +447,49 @@ export function useDocumentContent({
       if (!spanText) return
 
       try {
-        // 여러 가지 방식으로 텍스트 찾기
+        // 다양한 방식으로 텍스트 찾기 (우선순위 순)
         const searchTexts = [
-          spanText,
+          spanText, // 원본 텍스트
           spanText.replace(/\s+/g, ' '), // 공백 정규화
+          spanText.replace(/[\r\n\t]+/g, ' ').trim(), // 개행문자, 탭 제거
+          spanText.replace(/[^\w\s가-힣]/g, '').trim(), // 특수문자 제거 (한글, 영문, 숫자, 공백만)
+          spanText.substring(0, 50), // 앞 50글자
           spanText.substring(0, 30), // 앞 30글자
+          spanText.substring(0, 20), // 앞 20글자
+          spanText.substring(0, 15), // 앞 15글자
+          spanText.substring(spanText.length - 30), // 뒤 30글자
+          spanText.substring(spanText.length - 20), // 뒤 20글자
+          spanText.substring(spanText.length - 15), // 뒤 15글자
           spanText.split('\n')[0].trim(), // 첫 번째 줄
-        ]
+          spanText.split('\n').pop()?.trim(), // 마지막 줄
+          spanText.split(' ').slice(0, 5).join(' '), // 처음 5단어
+          spanText.split(' ').slice(-5).join(' '), // 마지막 5단어
+          spanText.split(' ').slice(0, 3).join(' '), // 처음 3단어
+          spanText.split(' ').slice(-3).join(' '), // 마지막 3단어
+          spanText.replace(/\d+/g, '').trim(), // 숫자 제거
+          spanText.replace(/[(){}[\]]/g, '').trim(), // 괄호 제거
+          spanText.substring(10, spanText.length - 10), // 양쪽 10글자씩 제거한 중간 부분
+        ].filter(text => text && text.length >= 3) // 3글자 이상만 유효
 
         let found = false
-        
+
         for (const searchText of searchTexts) {
           if (found || !searchText) continue
+
+          // 전체 body 텍스트에서 검색 (대소문자 구분 없이)
+          const bodyText = (iframeDoc.body.innerText || iframeDoc.body.textContent || '').toLowerCase()
+          const searchTextLower = searchText.toLowerCase()
+          if (!bodyText.includes(searchTextLower)) continue
           
-          // 전체 body 텍스트에서 검색
-          const bodyText = iframeDoc.body.innerText || iframeDoc.body.textContent || ''
-          if (!bodyText.includes(searchText)) continue
-          
-          // TreeWalker로 텍스트 노드 찾기
+          // TreeWalker로 텍스트 노드 찾기 (대소문자 구분 없이)
           const walker = iframeDoc.createTreeWalker(
             iframeDoc.body,
             NodeFilter.SHOW_TEXT,
             {
               acceptNode: (node) => {
-                const text = node.textContent || ''
-                return text.trim() && text.includes(searchText) 
-                  ? NodeFilter.FILTER_ACCEPT 
+                const text = (node.textContent || '').toLowerCase()
+                return text.trim() && text.includes(searchTextLower)
+                  ? NodeFilter.FILTER_ACCEPT
                   : NodeFilter.FILTER_REJECT
               }
             }
@@ -481,8 +498,9 @@ export function useDocumentContent({
           let textNode
           while (textNode = walker.nextNode() as Text) {
             const text = textNode.textContent || ''
-            const textIndex = text.indexOf(searchText)
-            
+            const textLower = text.toLowerCase()
+            const textIndex = textLower.indexOf(searchTextLower)
+
             if (textIndex !== -1) {
               // 하이라이트 요소 생성
               const highlightSpan = iframeDoc.createElement('span')
@@ -501,7 +519,7 @@ export function useDocumentContent({
               `
               highlightSpan.title = `${issue.reason}\n\n💡 ${issue.suggestion}`
               highlightSpan.setAttribute('data-issue-index', issueIndex.toString())
-              highlightSpan.setAttribute('data-issue-text', searchText)
+              highlightSpan.setAttribute('data-issue-text', spanText)
               
               // 텍스트 분할 및 하이라이트 적용
               const beforeText = text.substring(0, textIndex)
