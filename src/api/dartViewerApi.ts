@@ -1,16 +1,17 @@
-// dartViewerApi.ts (axios 방식으로 변경)
+// dartViewerApi.ts
 import axios from './axios';
 
-// 검증 API용 별도 axios 인스턴스
-const validationAxios = axios.create({
+// 검증 API를 위한 별도 axios 인스턴스
+const validationApi = axios.create({
   baseURL: process.env.REACT_APP_VALIDATION_API_URL || "http://localhost:8081",
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
-// 토큰 인터셉터 추가
-validationAxios.interceptors.request.use(
+// 검증 API에도 토큰 인터셉터 적용
+validationApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
     if (token && config.headers) {
@@ -21,34 +22,24 @@ validationAxios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// 공통 응답 인터셉터 (선택사항)
+validationApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 공통 에러 처리 로직 필요시 여기에 추가
+    return Promise.reject(error);
+  }
+);
+
 export const dartViewerApi = {
   fetchVersions: async (userId: number) => {
     try {
-      console.log('🔍 fetchVersions 호출, userId:', userId);
-      console.log('🔍 axios baseURL:', axios.defaults.baseURL);
-      
-      const response = await axios.get(`/api/versions?userId=${userId}`, {
-        headers: { "Cache-Control": "no-store" }
+      const response = await axios.get(`/api/versions`, {
+        params: { userId }
       });
-      
-      console.log('✅ fetchVersions 성공:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ fetchVersions 실패:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config
-      });
-      
-      if (error.response) {
-        throw new Error(`API Error (${error.response.status}): ${error.response.data?.message || error.message}`);
-      } else if (error.request) {
-        throw new Error(`Network Error: 서버에 연결할 수 없습니다`);
-      } else {
-        throw new Error(`Request Error: ${error.message}`);
-      }
+      throw new Error("Failed to fetch versions");
     }
   },
 
@@ -57,7 +48,7 @@ export const dartViewerApi = {
       const response = await axios.post('/api/versions', payload);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to create version");
+      throw new Error("Failed to create!");
     }
   },
 
@@ -66,7 +57,7 @@ export const dartViewerApi = {
       const response = await axios.post('/api/versions/finalize', payload);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to finalize version");
+      throw new Error("Failed to finalize!");
     }
   },
 
@@ -75,7 +66,7 @@ export const dartViewerApi = {
       const response = await axios.post('/api/versions/editing', payload);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to update editing version");
+      throw new Error("Fail to patch");
     }
   },
 
@@ -84,39 +75,46 @@ export const dartViewerApi = {
       const response = await axios.patch('/api/versions/editing', payload);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to patch editing version");
+      throw new Error("Fail to patch");
     }
   },
 
   deleteEditingVersion: async (userId: number) => {
     try {
       const response = await axios.delete('/api/versions/editing', {
-        data: { user_id: userId }
+        data: {
+          user_id: userId,
+        }
       });
-      return response.data;
+      return response;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to delete editing version");
+      throw new Error("Fail to delete");
     }
   },
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
     try {
-      const response = await validationAxios.post('/check', payload);
+      const response = await validationApi.post('/check', payload);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to validate section");
+      throw new Error("Failed to validate section");
     }
   },
 
   reviseSection: async (payload: { 
-    span: string, reason: string, rule_id: string, evidence: string, suggestion: string, severity: string
+    span: string, 
+    reason: string, 
+    rule_id: string, 
+    evidence: string, 
+    suggestion: string, 
+    severity: string 
   }) => {
     try {
-      const response = await validationAxios.post('/revise', payload);
-      // 서버가 단순 텍스트를 반환하므로 response.data 사용
+      const response = await validationApi.post('/revise', payload);
+      // 서버가 단순 텍스트를 반환하므로 data를 직접 반환
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to revise section");
+      throw new Error("Failed to revise section");
     }
   }
 };

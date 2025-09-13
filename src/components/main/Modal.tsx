@@ -1,3 +1,4 @@
+import axios from '../../api/axios';
 import React, { useState, useEffect, ReactNode } from 'react';
 import { X } from 'lucide-react';
 
@@ -135,19 +136,24 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({ isOpen, 
       setCompanies([]);
       return;
     }
-
-    const delayDebounceFn = setTimeout(() => {
+  
+    const delayDebounceFn = setTimeout(async () => {
       setIsLoading(true);
-      fetch(`http://localhost:8080/api/companies/search?keyword=${searchTerm}`)
-        .then(res => res.json())
-        .then(data => setCompanies(data.content || data.companies || []))
-        .catch(error => {
-          console.error("Error fetching companies:", error);
-          setCompanies([]);
-        })
-        .finally(() => setIsLoading(false));
+      try {
+        // fetch 대신 axios 사용
+        const response = await axios.get(`/api/companies/search`, {
+          params: { keyword: searchTerm }
+        });
+        
+        setCompanies(response.data.content || response.data.companies || []);
+      } catch (error) {
+        console.error("Error fetching companies:", error);
+        setCompanies([]);
+      } finally {
+        setIsLoading(false);
+      }
     }, 500); // 500ms 지연
-
+  
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
