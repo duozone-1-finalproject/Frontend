@@ -34,6 +34,8 @@ export const useSecuritiesGeneration = () => {
       if (result.success && result.data) {
         setGeneratedData(result.data);
         
+        console.log("✅ [Hook] 증권신고서 데이터 생성 성공:", result.data);
+
         // 즉시 v0 버전으로 DB에 저장 (템플릿 적용된 상태로)
         const userId = 321321;
         const v0Result = await createV0WithTemplateData(

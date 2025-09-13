@@ -203,6 +203,11 @@ export interface BaseTemplateData {
   S3_2I_5: string;
 }
 
+export interface BizTemplateData {
+    recepNo : string,
+    htmlContent: string
+}
+
 // 투자위험요소 데이터
 export interface RiskData {
   S3_1A_1: string;
@@ -240,8 +245,8 @@ export interface BizReportResponse {
 // AI 응답 전 템플릿 데이터 타입 
 export type BeforeAITemplateData = BaseTemplateData & RiskData;
 
-// 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석)
-export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData;
+// 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석 + 사업보고서)
+export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData & BizTemplateData;
 
 // 진행률 콜백 타입
 export type ProgressCallback = (step: string, progress: number, details?: string) => void;

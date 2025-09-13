@@ -163,7 +163,7 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
     }
     // 기본 템플릿 데이터 로드
-    const initialSectionsData = await initializeData(companyCode);
+    const initialSectionsData = await initializeData(companyCode, templateData.htmlContent);
     
     // 각 섹션에 템플릿 데이터 적용
     const filledSectionsData: Record<string, string> = {};
