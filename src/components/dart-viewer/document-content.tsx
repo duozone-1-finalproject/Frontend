@@ -10,6 +10,7 @@ import { useState } from 'react'
 export function DocumentContent({
   userId,
   corpCode,
+  companyName,
   htmlContent,
   sectionId,
   sectionName,
@@ -50,6 +51,7 @@ export function DocumentContent({
   } = useDocumentContent({
     userId,
     corpCode,
+    companyName,
     htmlContent,
     sectionId,
     sectionName,

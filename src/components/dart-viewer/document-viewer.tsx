@@ -10,9 +10,10 @@ import { mockDocumentData } from '../../lib/dartViewerHelpers'
 
 interface DocumentViewerProps {
   corpCode: string | null;
+  companyName: string | null;
 }
 
-export function DocumentViewer({ corpCode }: DocumentViewerProps) {
+export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
   const navigate = useNavigate()
 
   const {
@@ -49,7 +50,7 @@ export function DocumentViewer({ corpCode }: DocumentViewerProps) {
               <div className="h-5 w-px bg-blue-400"></div>
               <div className="flex items-center space-x-3">
                 <span className="bg-orange-500 px-2 py-1 rounded text-xs font-medium">코스닥</span>
-                <span className="font-medium">오픈엣지테크놀로지</span>
+                <span className="font-medium">{companyName || "회사명"}</span>
                 <VersionSelector
                   currentVersion={currentVersion}
                   versions={versions}
@@ -150,6 +151,7 @@ export function DocumentViewer({ corpCode }: DocumentViewerProps) {
             <DocumentContent
               userId={123456}
               corpCode={corpCode}
+              companyName={companyName}
               htmlContent={currentSectionHTML}
               sectionId={selectedSection}
               sectionName={currentSection?.sectionName}

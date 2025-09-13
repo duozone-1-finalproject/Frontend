@@ -59,8 +59,12 @@ export const useSecuritiesGeneration = () => {
   // 결과 확인 후 다트뷰어로 이동
   const handleGoToViewer = () => {
     if (generatedData && generatedData.corp_code) {
-      // v0가 DB에 이미 저장되었으므로 바로 이동, corpCode를 URL 파라미터로 전달
-      navigate(`/dartviewer?corpCode=${generatedData.corp_code}`);
+      // v0가 DB에 이미 저장되었으므로 바로 이동, corpCode와 corpName을 URL 파라미터로 전달
+      const params = new URLSearchParams({
+        corpCode: generatedData.corp_code,
+        companyName: generatedData.company_name || ''
+      });
+      navigate(`/dartviewer?${params.toString()}`);
     }
   };
 

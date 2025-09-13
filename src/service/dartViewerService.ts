@@ -115,6 +115,7 @@ export async function getVersionSections(version: string, userId: number, corpCo
 export async function updateDocumentSection(
   userId: number,
   corpCode: string,
+  companyName: string,
   sectionKey: string,
   editedHtml: string,
   options: {
@@ -146,6 +147,7 @@ export async function updateDocumentSection(
     const payload = createPayload({
       user_id: userId,
       corp_code: corpCode,
+      company_name: companyName,
       description: "편집중인 버전",
       sectionsData: { [sectionKey]: finalHtml }
     });
@@ -180,6 +182,7 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
     const payload = createPayload({
       user_id: userId,
       corp_code: templateData.corp_code,
+      company_name: templateData.company_name,
       version: "v0",
       version_number: 0,
       description: `${templateData.company_name} 증권신고서 초기 버전`,
