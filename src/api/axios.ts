@@ -2,9 +2,10 @@
 import axios from "axios";
 
 const TOKEN_KEY = "accessToken";
+console.log(process.env.REACT_APP_API_URL)
 
 const instance = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:8080",
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,6 +22,5 @@ instance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 
 export default instance;
