@@ -6,10 +6,10 @@ import { dartViewerApi } from "../api/dartViewerApi";
 
 export async function fetchVersionsFromDB(userId: number, corpCode: string): Promise<DBVersionData> {
   try {
-    const payload = createPayload({
-      user_id: userId, 
-      corp_code: corpCode,
-    });
+    const payload = {
+      user_id: userId,
+      corp_code: corpCode
+    }
     const response = await dartViewerApi.fetchVersions(payload);
     return response;
   } catch (error) {
@@ -127,12 +127,10 @@ export async function updateDocumentSection(
     let finalHtml: string | null = null;
 
     if (options.sectionType === 'part') {
-      console.log("진입완료")
       // part 전체 저장
       finalHtml = `<!DOCTYPE html>\n${editedHtml}`;
     } else {
       console.log(options.sectionType);
-      console.log("진입완료2")
       // 하위 section 병합
       finalHtml = await mergeAndFormatSection(
         options.htmlContent ?? '',

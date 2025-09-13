@@ -11,9 +11,9 @@ const makeHeaders = (): HeadersInit => {
 };
 
 export const dartViewerApi = {
-  fetchVersions: async (payload: unknown) => {
-    const res = await fetch(`http://localhost:8080/api/versions`, {
-      method: "GET",
+  fetchVersions: async (payload: { user_id: number; corp_code: string }) => {
+    const res = await fetch(`http://localhost:8080/api/versions/search`, {
+      method: "POST",
       headers: makeHeaders(),
       body: JSON.stringify(payload)
     });
