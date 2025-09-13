@@ -3,6 +3,7 @@ import prettier from "prettier/standalone";
 import parserHtml from "prettier/plugins/html";
 import { PayloadOptions } from "../types/dartViewer";
 import { TemplateData } from "../types/dartViewer";
+import { securitiesApi } from "../api/securitiesApi";
 
 export const mockDocumentData: DocumentSection[] = [
   {
@@ -500,12 +501,21 @@ const SECTION_FILES = [
   "section-6.html",
 ] as const;
 
-export async function initializeData(): Promise<Record<string, string>> {
+export async function initializeData(companyCode: string): Promise<Record<string, string>> {
   const sectionsData: Record<string, string> = {};
 
   for (let i = 0; i < SECTION_FILES.length; i++) {
     const res = await fetch(`/initialTemplate/${SECTION_FILES[i]}`);
-    sectionsData[`section${i + 1}`] = await res.text();
+    if(i===4){
+      console.log("2부 가져오는 중 : ",companyCode);
+      const res_biz=await securitiesApi.getBizReport(companyCode);
+      sectionsData[`section${i + 1}`]=res_biz.data.htmlContent;
+      console.log("2부 가져오기 완료");
+      console.log(res_biz.data.htmlContent);
+    }else{
+      sectionsData[`section${i + 1}`] = await res.text();
+    }
+    
   }
 
   return sectionsData;

@@ -356,7 +356,7 @@ static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): 
         
         // AI 주석 생성 (기본 회사 데이터 사용)
         this.requestEquityAnnotations(basicDataResult.data, (step, progress, details) => {
-          onProgress?.(`🤖 ${step}`, Math.max(50, progress), details);
+          onProgress?.(`${step}`, Math.max(50, progress), details);
         })
       ]);
   
