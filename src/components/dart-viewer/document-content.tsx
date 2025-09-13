@@ -1,9 +1,10 @@
 'use client'
 
 import { Button } from '../common/Button'
-import { Edit3, X, AlertCircle, CheckCircle, ChevronRight, MapPin, Wand2, Loader2, Copy } from 'lucide-react'
+import { Edit3, X, AlertCircle, CheckCircle, MapPin } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
+import { ValidationPanel } from './ValidationPanel'
 import { useState } from 'react'
 
 export function DocumentContent({ 
@@ -54,6 +55,163 @@ export function DocumentContent({
     onSectionModified,
   })
 
+  // 검증 시작 핸들러
+  const handleValidateStart = () => {
+    // 새로운 검증 시작 시 이전 AI 수정된 텍스트들과 클릭 상태 초기화
+    setAiRevisedTexts({})
+    setClickedCopyButtons(new Set())
+    handleValidate()
+  }
+
+  // AI 수정 핸들러
+  const handleAIRevisionClick = async (issue: ValidationIssue, index: number) => {
+    setAiProcessingIssues(prev => new Set(prev).add(index))
+    
+    try {
+      const result = await handleAIRevision(issue)
+      if (result.success && result.revisedText) {
+        // AI 수정된 텍스트를 상태에 저장
+        setAiRevisedTexts(prev => ({
+          ...prev,
+          [index]: result.revisedText
+        }))
+        console.log('AI 수정 성공:', result.message)
+      } else {
+        alert('AI 수정 실패: ' + result.message)
+      }
+    } catch (error) {
+      alert('AI 수정 중 오류가 발생했습니다.')
+    } finally {
+      setAiProcessingIssues(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }
+  }
+
+  // 텍스트 복사 핸들러
+  const handleCopyText = (text: string, index: number) => {
+    // 클릭 애니메이션을 위한 상태 설정
+    setClickedCopyButtons(prev => new Set(prev).add(index))
+    
+    // 클립보드에 복사
+    navigator.clipboard.writeText(text).catch(() => {
+      // 복사 실패해도 조용히 처리
+    })
+    
+    // 2초 후 클릭 상태 제거
+    setTimeout(() => {
+      setClickedCopyButtons(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
+    }, 2000)
+  }
+
+  // 문제 위치로 이동 핸들러
+  const handleNavigateToIssue = (issue: ValidationIssue, index: number) => {
+    // 해당 텍스트가 하이라이트된 위치로 스크롤
+    if (!iframeRef.current) return
+    
+    const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
+    if (!iframeDoc) return
+    
+    console.log('찾는 이슈:', issue.span.substring(0, 50) + '...')
+    
+    // 하이라이트된 요소 중에서 해당 이슈와 매칭되는 것 찾기
+    const highlights = iframeDoc.querySelectorAll('.validation-highlight')
+    console.log('발견된 하이라이트 수:', highlights.length)
+    
+    let targetHighlight: HTMLElement | null = null
+    
+    // 1. 정확한 인덱스로 찾기
+    targetHighlight = Array.from(highlights).find(el => 
+      el.getAttribute('data-issue-index') === index.toString()
+    ) as HTMLElement
+    
+    // 2. 텍스트 내용으로 찾기 (여러 방법 시도)
+    if (!targetHighlight) {
+      const searchTexts = [
+        issue.span.trim(),
+        issue.span.replace(/\s+/g, ' ').trim(),
+        issue.span.substring(0, 30).trim(),
+        issue.span.split('\n')[0].trim(),
+      ]
+      
+      for (const searchText of searchTexts) {
+        if (targetHighlight || !searchText) break
+        
+        targetHighlight = Array.from(highlights).find(el => {
+          const elText = el.textContent?.trim() || ''
+          const dataText = el.getAttribute('data-issue-text') || ''
+          return elText.includes(searchText) || 
+                 dataText.includes(searchText) ||
+                 searchText.includes(elText) ||
+                 searchText.includes(dataText)
+        }) as HTMLElement
+      }
+    }
+    
+    console.log('찾은 타겟:', targetHighlight)
+    
+    if (targetHighlight) {
+      // 기존 flash 클래스 제거
+      iframeDoc.querySelectorAll('.flash-animation').forEach(el => {
+        el.classList.remove('flash-animation')
+      })
+      
+      // 새로운 flash 애니메이션 추가
+      targetHighlight.classList.add('flash-animation')
+      
+      // 스크롤 이동 (약간의 지연 후)
+      setTimeout(() => {
+        targetHighlight?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        })
+      }, 100)
+      
+      // 3초 후 애니메이션 제거
+      setTimeout(() => {
+        targetHighlight?.classList.remove('flash-animation')
+      }, 3000)
+      
+      console.log('스크롤 이동 완료')
+    } else {
+      console.warn('하이라이트된 텍스트를 찾을 수 없습니다:', issue.span.substring(0, 50))
+      
+      // 대안: 전체 텍스트에서 직접 검색해서 스크롤
+      const allText = iframeDoc.body.innerText || ''
+      if (allText.includes(issue.span.trim().substring(0, 20))) {
+        // 대략적인 위치로 스크롤
+        const range = iframeDoc.createRange()
+        const walker = iframeDoc.createTreeWalker(
+          iframeDoc.body,
+          NodeFilter.SHOW_TEXT,
+          null
+        )
+        
+        let node
+        while (node = walker.nextNode()) {
+          if (node.textContent && node.textContent.includes(issue.span.trim().substring(0, 20))) {
+            range.selectNode(node)
+            const rect = range.getBoundingClientRect()
+            if (rect.height > 0) {
+              node.parentElement?.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              })
+              break
+            }
+          }
+        }
+      }
+    }
+  }
+
   if (!htmlContent) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
@@ -80,12 +238,7 @@ export function DocumentContent({
                 편집 시작
               </Button>
               <Button
-                onClick={() => {
-                  // 새로운 검증 시작 시 이전 AI 수정된 텍스트들과 클릭 상태 초기화
-                  setAiRevisedTexts({})
-                  setClickedCopyButtons(new Set())
-                  handleValidate()
-                }}
+                onClick={handleValidateStart}
                 disabled={isValidating}
                 size="sm"
                 variant="outline"
@@ -295,296 +448,18 @@ export function DocumentContent({
       )}
 
       {/* 검증 결과 상세 패널 */}
-      {showValidationPanel && validationResult && (
-        <div className="absolute inset-y-0 right-0 z-40 w-96 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
-          <div className="h-full flex flex-col">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-red-50">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <h3 className="font-semibold text-gray-800">검증 결과</h3>
-              </div>
-              <button
-                onClick={() => setShowValidationPanel(false)}
-                className="p-1 hover:bg-red-100 rounded-md transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 요약 정보 */}
-            <div className="p-4 bg-gray-50 border-b">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span>심각: {validationResult.issues.filter(i => i.severity === 'high').length}개</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span>보통: {validationResult.issues.filter(i => i.severity === 'medium').length}개</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span>경미: {validationResult.issues.filter(i => i.severity === 'low').length}개</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 문제점 목록 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {validationResult.issues.map((issue, index) => (
-                <div key={index} className={`border rounded-lg p-4 ${
-                  issue.severity === 'high' ? 'border-red-200 bg-red-50' :
-                  issue.severity === 'medium' ? 'border-orange-200 bg-orange-50' :
-                  'border-yellow-200 bg-yellow-50'
-                }`}>
-                  {/* 심각도 배지 및 AI 수정 버튼 */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        issue.severity === 'high' ? 'bg-red-100 text-red-800' :
-                        issue.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {issue.severity === 'high' ? '심각' : issue.severity === 'medium' ? '보통' : '경미'}
-                      </span>
-                      <span className="text-xs text-gray-500">문제 {index + 1}</span>
-                    </div>
-                    
-                    {/* AI 수정 버튼 */}
-                    <button
-                      onClick={async () => {
-                        const issueId = index
-                        setAiProcessingIssues(prev => new Set(prev).add(issueId))
-                        
-                        try {
-                          const result = await handleAIRevision(issue)
-                          if (result.success && result.revisedText) {
-                            // AI 수정된 텍스트를 상태에 저장
-                            setAiRevisedTexts(prev => ({
-                              ...prev,
-                              [index]: result.revisedText
-                            }))
-                            console.log('AI 수정 성공:', result.message)
-                          } else {
-                            alert('AI 수정 실패: ' + result.message)
-                          }
-                        } catch (error) {
-                          alert('AI 수정 중 오류가 발생했습니다.')
-                        } finally {
-                          setAiProcessingIssues(prev => {
-                            const newSet = new Set(prev)
-                            newSet.delete(issueId)
-                            return newSet
-                          })
-                        }
-                      }}
-                      disabled={aiProcessingIssues.has(index)}
-                      className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
-                        aiProcessingIssues.has(index)
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                      }`}
-                    >
-                      {aiProcessingIssues.has(index) ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          처리중
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-3 h-3" />
-                          AI 수정
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* 문제 텍스트 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">문제 위치:</h4>
-                    <div className="bg-white border rounded p-2 text-sm font-mono text-gray-700 max-h-20 overflow-y-auto">
-                      "{issue.span}"
-                    </div>
-                  </div>
-
-                  {/* 이유 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">문제 이유:</h4>
-                    <p className="text-sm text-gray-600">{issue.reason}</p>
-                  </div>
-
-                  {/* 제안 */}
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">개선 제안:</h4>
-                    <p className="text-sm text-green-700">{issue.suggestion}</p>
-                  </div>
-
-                  {/* 증거 */}
-                  {issue.evidence && (
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-gray-800 mb-1">근거:</h4>
-                      <p className="text-xs text-gray-500">{issue.evidence}</p>
-                    </div>
-                  )}
-
-                  {/* AI 개선된 텍스트 */}
-                  {aiRevisedTexts[index] && (
-                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3 relative">
-                      <h4 className="text-sm font-medium text-green-800 mb-2 flex items-center gap-1">
-                        <Wand2 className="w-4 h-4" />
-                        AI 개선된 텍스트:
-                      </h4>
-                      <div className="bg-white border rounded p-2 text-sm text-gray-700 max-h-32 overflow-y-auto">
-                        "{aiRevisedTexts[index]}"
-                      </div>
-                      
-                      {/* 우측 상단 복사 버튼 */}
-                      <button
-                        onClick={() => {
-                          const copyIndex = index
-                          // 클릭 애니메이션을 위한 상태 설정
-                          setClickedCopyButtons(prev => new Set(prev).add(copyIndex))
-                          
-                          // 클립보드에 복사
-                          navigator.clipboard.writeText(aiRevisedTexts[index]).catch(() => {
-                            // 복사 실패해도 조용히 처리
-                          })
-                          
-                          // 2초 후 클릭 상태 제거
-                          setTimeout(() => {
-                            setClickedCopyButtons(prev => {
-                              const newSet = new Set(prev)
-                              newSet.delete(copyIndex)
-                              return newSet
-                            })
-                          }, 2000)
-                        }}
-                        className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-green-100 rounded transition-all duration-150 border bg-white shadow-sm"
-                      >
-                        <Copy className="w-3 h-3" />
-                        <span>{clickedCopyButtons.has(index) ? '복사됨' : '복사'}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* 문제 위치로 이동 버튼 */}
-                  <button 
-                    className={`w-full mt-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                      issue.severity === 'high' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                      issue.severity === 'medium' ? 'bg-orange-600 hover:bg-orange-700 text-white' :
-                      'bg-yellow-600 hover:bg-yellow-700 text-white'
-                    }`}
-                    onClick={() => {
-                      // 해당 텍스트가 하이라이트된 위치로 스크롤
-                      if (!iframeRef.current) return
-                      
-                      const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document
-                      if (!iframeDoc) return
-                      
-                      console.log('찾는 이슈:', issue.span.substring(0, 50) + '...')
-                      
-                      // 하이라이트된 요소 중에서 해당 이슈와 매칭되는 것 찾기
-                      const highlights = iframeDoc.querySelectorAll('.validation-highlight')
-                      console.log('발견된 하이라이트 수:', highlights.length)
-                      
-                      let targetHighlight: HTMLElement | null = null
-                      
-                      // 1. 정확한 인덱스로 찾기
-                      targetHighlight = Array.from(highlights).find(el => 
-                        el.getAttribute('data-issue-index') === index.toString()
-                      ) as HTMLElement
-                      
-                      // 2. 텍스트 내용으로 찾기 (여러 방법 시도)
-                      if (!targetHighlight) {
-                        const searchTexts = [
-                          issue.span.trim(),
-                          issue.span.replace(/\s+/g, ' ').trim(),
-                          issue.span.substring(0, 30).trim(),
-                          issue.span.split('\n')[0].trim(),
-                        ]
-                        
-                        for (const searchText of searchTexts) {
-                          if (targetHighlight || !searchText) break
-                          
-                          targetHighlight = Array.from(highlights).find(el => {
-                            const elText = el.textContent?.trim() || ''
-                            const dataText = el.getAttribute('data-issue-text') || ''
-                            return elText.includes(searchText) || 
-                                   dataText.includes(searchText) ||
-                                   searchText.includes(elText) ||
-                                   searchText.includes(dataText)
-                          }) as HTMLElement
-                        }
-                      }
-                      
-                      console.log('찾은 타겟:', targetHighlight)
-                      
-                      if (targetHighlight) {
-                        // 기존 flash 클래스 제거
-                        iframeDoc.querySelectorAll('.flash-animation').forEach(el => {
-                          el.classList.remove('flash-animation')
-                        })
-                        
-                        // 새로운 flash 애니메이션 추가
-                        targetHighlight.classList.add('flash-animation')
-                        
-                        // 스크롤 이동 (약간의 지연 후)
-                        setTimeout(() => {
-                          targetHighlight?.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center',
-                            inline: 'nearest'
-                          })
-                        }, 100)
-                        
-                        // 3초 후 애니메이션 제거
-                        setTimeout(() => {
-                          targetHighlight?.classList.remove('flash-animation')
-                        }, 3000)
-                        
-                        console.log('스크롤 이동 완료')
-                      } else {
-                        console.warn('하이라이트된 텍스트를 찾을 수 없습니다:', issue.span.substring(0, 50))
-                        
-                        // 대안: 전체 텍스트에서 직접 검색해서 스크롤
-                        const allText = iframeDoc.body.innerText || ''
-                        if (allText.includes(issue.span.trim().substring(0, 20))) {
-                          // 대략적인 위치로 스크롤
-                          const range = iframeDoc.createRange()
-                          const walker = iframeDoc.createTreeWalker(
-                            iframeDoc.body,
-                            NodeFilter.SHOW_TEXT,
-                            null
-                          )
-                          
-                          let node
-                          while (node = walker.nextNode()) {
-                            if (node.textContent && node.textContent.includes(issue.span.trim().substring(0, 20))) {
-                              range.selectNode(node)
-                              const rect = range.getBoundingClientRect()
-                              if (rect.height > 0) {
-                                node.parentElement?.scrollIntoView({ 
-                                  behavior: 'smooth', 
-                                  block: 'center' 
-                                })
-                                break
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  >
-                    <ChevronRight className="w-4 h-4 inline mr-1" />
-                    문제 위치로 이동
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <ValidationPanel
+        isVisible={showValidationPanel}
+        validationResult={validationResult}
+        aiProcessingIssues={aiProcessingIssues}
+        aiRevisedTexts={aiRevisedTexts}
+        clickedCopyButtons={clickedCopyButtons}
+        iframeRef={iframeRef}
+        onClose={() => setShowValidationPanel(false)}
+        onAIRevision={handleAIRevisionClick}
+        onCopyText={handleCopyText}
+        onNavigateToIssue={handleNavigateToIssue}
+      />
       
       <iframe
         ref={iframeRef}
