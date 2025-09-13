@@ -155,7 +155,7 @@ export async function updateDocumentSection(
 }
 
 // 템플릿 데이터를 적용한 v0 버전 생성
-export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
+export async function createV0WithTemplateData(userId: number, templateData: TemplateData, companyCode: string) {
   try {    
     const versionsData = await fetchVersionsFromDB(userId);
 
@@ -163,7 +163,7 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
     }
     // 기본 템플릿 데이터 로드
-    const initialSectionsData = await initializeData();
+    const initialSectionsData = await initializeData(companyCode, templateData.htmlContent);
     
     // 각 섹션에 템플릿 데이터 적용
     const filledSectionsData: Record<string, string> = {};
