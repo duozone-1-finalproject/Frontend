@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '../common/Button'
-import { Edit3, X, AlertCircle, CheckCircle, ChevronRight, MapPin } from 'lucide-react'
+import { Edit3, X, AlertCircle, CheckCircle, ChevronRight, MapPin, Wand2, Loader2, Copy } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
 import { useState } from 'react'
@@ -16,6 +16,9 @@ export function DocumentContent({
   modifiedSections
 }: DocumentContentProps) {
   const [showValidationPanel, setShowValidationPanel] = useState(false)
+  const [aiProcessingIssues, setAiProcessingIssues] = useState<Set<number>>(new Set())
+  const [aiRevisedTexts, setAiRevisedTexts] = useState<Record<number, string>>({})
+  const [clickedCopyButtons, setClickedCopyButtons] = useState<Set<number>>(new Set())
   const {
     isLoading,
     hasError,
@@ -40,7 +43,8 @@ export function DocumentContent({
     highlightValidationIssues,
     setValidationMessage,
     setValidationResult,
-    hideValidationMessage
+    hideValidationMessage,
+    handleAIRevision
   } = useDocumentContent({
     userId,
     htmlContent,
@@ -76,7 +80,12 @@ export function DocumentContent({
                 편집 시작
               </Button>
               <Button
-                onClick={handleValidate}
+                onClick={() => {
+                  // 새로운 검증 시작 시 이전 AI 수정된 텍스트들과 클릭 상태 초기화
+                  setAiRevisedTexts({})
+                  setClickedCopyButtons(new Set())
+                  handleValidate()
+                }}
                 disabled={isValidating}
                 size="sm"
                 variant="outline"
@@ -329,16 +338,66 @@ export function DocumentContent({
                   issue.severity === 'medium' ? 'border-orange-200 bg-orange-50' :
                   'border-yellow-200 bg-yellow-50'
                 }`}>
-                  {/* 심각도 배지 */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      issue.severity === 'high' ? 'bg-red-100 text-red-800' :
-                      issue.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {issue.severity === 'high' ? '심각' : issue.severity === 'medium' ? '보통' : '경미'}
-                    </span>
-                    <span className="text-xs text-gray-500">문제 {index + 1}</span>
+                  {/* 심각도 배지 및 AI 수정 버튼 */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        issue.severity === 'high' ? 'bg-red-100 text-red-800' :
+                        issue.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {issue.severity === 'high' ? '심각' : issue.severity === 'medium' ? '보통' : '경미'}
+                      </span>
+                      <span className="text-xs text-gray-500">문제 {index + 1}</span>
+                    </div>
+                    
+                    {/* AI 수정 버튼 */}
+                    <button
+                      onClick={async () => {
+                        const issueId = index
+                        setAiProcessingIssues(prev => new Set(prev).add(issueId))
+                        
+                        try {
+                          const result = await handleAIRevision(issue)
+                          if (result.success && result.revisedText) {
+                            // AI 수정된 텍스트를 상태에 저장
+                            setAiRevisedTexts(prev => ({
+                              ...prev,
+                              [index]: result.revisedText
+                            }))
+                            console.log('AI 수정 성공:', result.message)
+                          } else {
+                            alert('AI 수정 실패: ' + result.message)
+                          }
+                        } catch (error) {
+                          alert('AI 수정 중 오류가 발생했습니다.')
+                        } finally {
+                          setAiProcessingIssues(prev => {
+                            const newSet = new Set(prev)
+                            newSet.delete(issueId)
+                            return newSet
+                          })
+                        }
+                      }}
+                      disabled={aiProcessingIssues.has(index)}
+                      className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                        aiProcessingIssues.has(index)
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                    >
+                      {aiProcessingIssues.has(index) ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          처리중
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-3 h-3" />
+                          AI 수정
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* 문제 텍스트 */}
@@ -366,6 +425,46 @@ export function DocumentContent({
                     <div className="mb-3">
                       <h4 className="text-sm font-medium text-gray-800 mb-1">근거:</h4>
                       <p className="text-xs text-gray-500">{issue.evidence}</p>
+                    </div>
+                  )}
+
+                  {/* AI 개선된 텍스트 */}
+                  {aiRevisedTexts[index] && (
+                    <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3 relative">
+                      <h4 className="text-sm font-medium text-green-800 mb-2 flex items-center gap-1">
+                        <Wand2 className="w-4 h-4" />
+                        AI 개선된 텍스트:
+                      </h4>
+                      <div className="bg-white border rounded p-2 text-sm text-gray-700 max-h-32 overflow-y-auto">
+                        "{aiRevisedTexts[index]}"
+                      </div>
+                      
+                      {/* 우측 상단 복사 버튼 */}
+                      <button
+                        onClick={() => {
+                          const copyIndex = index
+                          // 클릭 애니메이션을 위한 상태 설정
+                          setClickedCopyButtons(prev => new Set(prev).add(copyIndex))
+                          
+                          // 클립보드에 복사
+                          navigator.clipboard.writeText(aiRevisedTexts[index]).catch(() => {
+                            // 복사 실패해도 조용히 처리
+                          })
+                          
+                          // 2초 후 클릭 상태 제거
+                          setTimeout(() => {
+                            setClickedCopyButtons(prev => {
+                              const newSet = new Set(prev)
+                              newSet.delete(copyIndex)
+                              return newSet
+                            })
+                          }, 2000)
+                        }}
+                        className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-green-100 rounded transition-all duration-150 border bg-white shadow-sm"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>{clickedCopyButtons.has(index) ? '복사됨' : '복사'}</span>
+                      </button>
                     </div>
                   )}
 

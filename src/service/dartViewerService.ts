@@ -233,3 +233,34 @@ export async function validateSectionContent(userId: number, sectionId: string, 
     }
   }
 }
+
+// AI를 통한 섹션 수정
+export async function reviseSectionContent(issue: {
+  span: string;
+  reason: string;
+  rule_id: string;
+  evidence: string;
+  suggestion: string;
+  severity: string;
+}) {
+  try {
+    console.log('AI 수정 요청:', issue);
+    
+    const response = await dartViewerApi.reviseSection(issue);
+    console.log('AI 수정 응답:', response);
+    
+    return {
+      success: true,
+      message: 'AI 수정이 완료되었습니다.',
+      revisedText: response
+    };
+    
+  } catch (error: any) {
+    console.error('AI 수정 오류:', error);
+    return {
+      success: false,
+      message: 'AI 수정 중 오류가 발생했습니다: ' + error.message,
+      revisedText: null
+    };
+  }
+}

@@ -109,5 +109,22 @@ export const dartViewerApi = {
     }
 
     return res.json();
+  },
+
+  reviseSection: async (payload: { 
+    span: string, reason: string, rule_id: string, evidence: string, suggestion: string, severity: string
+  }) => {
+    const res = await fetch('http://localhost:8081/revise', {
+      method: 'POST',
+      headers: makeHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to revise section")
+    }
+
+    // 서버가 단순 텍스트를 반환하므로 text()로 받기
+    return res.text();
   }
 };

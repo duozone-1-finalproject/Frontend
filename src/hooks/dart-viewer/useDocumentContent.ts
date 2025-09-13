@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { updateDocumentSection, validateSectionContent } from '../../service/dartViewerService'
+import { updateDocumentSection, validateSectionContent, reviseSectionContent } from '../../service/dartViewerService'
 import { getSectionKeyFromId, findSectionById, isLeafSection, mockDocumentData, ensureReadOnlyMode } from '../../lib/dartViewerHelpers'
-import { ValidationResponse } from '../../types/dartViewer'
+import { ValidationResponse, ValidationIssue } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
@@ -367,6 +367,38 @@ export function useDocumentContent({
     // hasValidationData는 그대로 두어 편집 시 검증창 버튼이 계속 보이도록 함
   }
 
+  // AI를 통한 자동 수정
+  const handleAIRevision = async (issue: ValidationIssue) => {
+    try {
+      console.log('AI 수정 시작:', issue)
+
+      // AI 수정 요청
+      const revisionResult = await reviseSectionContent({
+        span: issue.span,
+        reason: issue.reason,
+        rule_id: issue.rule_id || '',
+        evidence: issue.evidence || '',
+        suggestion: issue.suggestion,
+        severity: issue.severity
+      })
+      console.log("AI 수정 결과:", revisionResult)
+
+      if (!revisionResult.success || !revisionResult.revisedText) {
+        return { success: false, message: revisionResult.message || 'AI 수정에 실패했습니다.' }
+      }
+
+      return { 
+        success: true, 
+        message: 'AI 수정된 텍스트가 준비되었습니다.',
+        revisedText: revisionResult.revisedText
+      }
+
+    } catch (error: any) {
+      console.error('AI 수정 처리 오류:', error)
+      return { success: false, message: 'AI 수정 중 오류가 발생했습니다.' }
+    }
+  }
+
   // 텍스트 하이라이팅 함수
   const highlightValidationIssues = (validationData: ValidationResponse) => {
     if (!iframeRef.current) return
@@ -532,6 +564,7 @@ export function useDocumentContent({
     highlightValidationIssues,
     setValidationMessage,
     setValidationResult,
-    hideValidationMessage
+    hideValidationMessage,
+    handleAIRevision
   }
 }
