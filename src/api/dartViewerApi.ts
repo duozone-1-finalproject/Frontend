@@ -12,7 +12,7 @@ const makeHeaders = (): HeadersInit => {
 
 export const dartViewerApi = {
   fetchAllCompanies: async (user_id: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions?user_id=${user_id}`, {
+    const res = await fetch(`http://localhost:8080/api/versions/companies?userId=${user_id}`, {
       method: "GET",
       headers: makeHeaders()
     });

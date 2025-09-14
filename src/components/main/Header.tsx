@@ -1,12 +1,21 @@
 // components/main/Header.tsx
 import React, { useState } from 'react';
-import { Calendar, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, User, ChevronDown, Building } from 'lucide-react';
 import type { CalendarEvent } from '../../types/calendar';
+
+interface Company {
+  corpCode: string;
+  companyName: string;
+}
 
 interface HeaderProps {
   todayEvents: CalendarEvent[];
   showUserMenu: boolean;
   userName?: string;
+  userId?: number;
+  companies: Company[];
+  companiesLoading: boolean;
   onProfileClick: () => void;
   onMyPageClick: () => void;
   onLogoutClick: () => void;
@@ -16,14 +25,34 @@ export const Header: React.FC<HeaderProps> = ({
   todayEvents,
   showUserMenu,
   userName,
+  userId = 123456,
+  companies,
+  companiesLoading,
   onProfileClick,
   onMyPageClick,
   onLogoutClick
 }) => {
+  const navigate = useNavigate();
   const [showTodaySchedule, setShowTodaySchedule] = useState(false);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
   const handleTodayScheduleClick = () => {
     setShowTodaySchedule(!showTodaySchedule);
+  };
+
+  // 회사 드롭다운 토글
+  const handleCompanyDropdownToggle = () => {
+    setShowCompanyDropdown(!showCompanyDropdown);
+  };
+
+  // 회사 선택 핸들러
+  const onCompanySelect = (company: Company) => {
+    const params = new URLSearchParams({
+      corpCode: company.corpCode,
+      companyName: company.companyName
+    });
+    navigate(`/dartviewer?${params.toString()}`);
+    setShowCompanyDropdown(false);
   };
   return (
     <header className="bg-white shadow-sm border-b">
@@ -39,8 +68,8 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-20 h-20 object-contain"
               />
               {/* ComAIng Text */}
-              <span 
-                className="text-2xl font-semibold tracking-tight text-gray-900" 
+              <span
+                className="text-2xl font-semibold tracking-tight text-gray-900"
                 style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}
               >
                 ComAIng
@@ -50,6 +79,49 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Navigation */}
           <nav className="flex items-center space-x-8">
+            {/* Company Selector */}
+            <div className="relative">
+              <button
+                onClick={handleCompanyDropdownToggle}
+                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors"
+              >
+                <Building className="w-4 h-4" />
+                <span>진행중인 프로젝트</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Company Dropdown */}
+              {showCompanyDropdown && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 max-h-60 overflow-y-auto">
+                  {companiesLoading ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>회사 목록을 불러오는 중...</span>
+                      </div>
+                    </div>
+                  ) : companies.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      진행중인 프로젝트가 없습니다.
+                    </div>
+                  ) : (
+                    companies.map((company) => (
+                      <button
+                        key={company.corpCode}
+                        onClick={() => onCompanySelect(company)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{company.companyName}</span>
+                          <span className="text-xs text-gray-500">{company.corpCode}</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleTodayScheduleClick}
               className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
