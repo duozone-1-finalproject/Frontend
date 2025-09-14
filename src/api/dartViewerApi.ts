@@ -122,7 +122,7 @@ export const dartViewerApi = {
   },
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
-    const res = await fetch('http://localhost:8081/check', {
+    const res = await fetch('http://localhost:8080/api/validation/check', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -138,7 +138,7 @@ export const dartViewerApi = {
   reviseSection: async (payload: { 
     span: string, reason: string, rule_id: string, evidence: string, suggestion: string, severity: string
   }) => {
-    const res = await fetch('http://localhost:8081/revise', {
+    const res = await fetch('http://localhost:8080/api/validation/revise', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -148,6 +148,6 @@ export const dartViewerApi = {
       throw new Error("Failed to revise section")
     }
 
-    return res.text();
+    return res.json();
   }
 };

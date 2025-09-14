@@ -231,7 +231,7 @@ export async function validateSectionContent(userId: number, sectionId: string, 
     return { 
       success: true, 
       message: '검증이 완료되었습니다.',
-      validationData: response // ValidationResponse 전체 데이터
+      validationData: response.data // ValidationResponse 전체 데이터
     };
 
   } catch (error: any) {
@@ -262,7 +262,7 @@ export async function reviseSectionContent(issue: {
     return {
       success: true,
       message: 'AI 수정이 완료되었습니다.',
-      revisedText: response
+      revisedText: response.data
     };
     
   } catch (error: any) {
