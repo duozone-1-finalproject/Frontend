@@ -10,7 +10,7 @@ export async function fetchVersionsFromDB(userId: number, corpCode: string): Pro
       user_id: userId,
       corp_code: corpCode
     }
-    const response = await dartViewerApi.fetchVersions(payload);
+    const response = await dartViewerApi.fetchCompanyVersions(payload);
     // 새로운 응답 구조에서 versions 객체만 반환
     return response.versions || {};
   } catch (error) {

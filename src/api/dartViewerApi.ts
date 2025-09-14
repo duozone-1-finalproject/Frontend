@@ -11,7 +11,18 @@ const makeHeaders = (): HeadersInit => {
 };
 
 export const dartViewerApi = {
-  fetchVersions: async (payload: { user_id: number; corp_code: string }) => {
+  fetchAllCompanies: async (user_id: number) => {
+    const res = await fetch(`http://localhost:8080/api/versions?user_id=${user_id}`, {
+      method: "GET",
+      headers: makeHeaders()
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch companies");
+    }
+    return res.json();
+  },
+
+  fetchCompanyVersions: async (payload: { user_id: number; corp_code: string }) => {
     const res = await fetch(`http://localhost:8080/api/versions/search`, {
       method: "POST",
       headers: makeHeaders(),
