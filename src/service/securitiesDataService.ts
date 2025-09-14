@@ -25,6 +25,10 @@ export class SecuritiesDataService {
   // 1-1. 기본 회사 데이터만 가져오기 (빠른 API)
   static async fetchBasicCompanyData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BaseTemplateData>> {
     try {      
+      // 재무정보 먼저 저장하기
+      onProgress?.(" 재무 정보 저장 중 ", 10, "FastAPI에서 재무 정보를 저장하는 중...")
+      await securitiesApi.saveFinancialsData(companyCode);
+
       onProgress?.("📡 회사 기본 정보 조회 중", 15, "DART API에서 회사 데이터를 가져오는 중...");
 
       const response = await securitiesApi.fetchCompanyData(companyCode);
