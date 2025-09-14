@@ -41,6 +41,11 @@ const MainPage: React.FC = () => {
   // 회사 목록 미리 로드용
   const { companies, isLoading: companiesLoading, loadCompanies } = useCompanySelector();
 
+  // 회사 삭제 후 목록 새로고침
+  const handleCompanyDeleted = (corpCode: string) => {
+    loadCompanies(123456); // 강제 새로고침
+  };
+
   // 페이지 로드 시 회사 목록 미리 로드
   useEffect(() => {
     loadCompanies(123456);
@@ -63,6 +68,7 @@ const MainPage: React.FC = () => {
         onProfileClick={handleProfileClick}
         onMyPageClick={handleMyPageClick}
         onLogoutClick={handleLogoutClick}
+        onCompanyDeleted={handleCompanyDeleted}
       />
 
       {/* Generation Progress Modal */}
