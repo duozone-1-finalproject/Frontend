@@ -16,7 +16,8 @@ export function DocumentContent({
   sectionName,
   sectionType,
   onSectionModified,
-  modifiedSections
+  modifiedSections,
+  onVersionUpdate
 }: DocumentContentProps) {
   const [showValidationPanel, setShowValidationPanel] = useState(false)
   const [aiProcessingIssues, setAiProcessingIssues] = useState<Set<number>>(new Set())
@@ -57,6 +58,7 @@ export function DocumentContent({
     sectionName,
     sectionType,
     onSectionModified,
+    onVersionUpdate,
   })
 
   // 검증 시작 핸들러

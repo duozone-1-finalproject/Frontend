@@ -44,6 +44,7 @@ export interface DocumentContentProps {
   sectionType?: 'part' | 'section-1' | 'section-2';
   onSectionModified?: (sectionId: string, updatedHTML: string) => void;
   modifiedSections?: Set<string>;
+  onVersionUpdate?: () => void;
 }
 
 

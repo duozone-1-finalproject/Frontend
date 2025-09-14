@@ -13,6 +13,7 @@ export interface UseDocumentContentProps {
   sectionType?: 'part' | 'section-1' | 'section-2'
   onSectionModified?: (sectionId: string, modifiedHtml: string) => void
   onValidateSection?: (sectionId: string, htmlContent: string) => void
+  onVersionUpdate?: () => void
 }
 
 export function useDocumentContent({
@@ -24,7 +25,8 @@ export function useDocumentContent({
   sectionName,
   sectionType,
   onSectionModified,
-  onValidateSection
+  onValidateSection,
+  onVersionUpdate
 }: UseDocumentContentProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -183,9 +185,14 @@ export function useDocumentContent({
       setCurrentHtml(editedHtml)
       setOriginalHtml(editedHtml)
       setIsEditing(false)
-      
+
       setSaveMessage('편집이 완료되었습니다. "최종 저장"을 눌러 DB에 저장하세요.')
-      
+
+      // currentVersion을 "editing"으로 업데이트
+      if (onVersionUpdate) {
+        onVersionUpdate()
+      }
+
       setTimeout(() => {
         setSaveMessage('')
       }, 5000)

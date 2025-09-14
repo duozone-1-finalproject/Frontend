@@ -39,7 +39,7 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
       try {
         if (!corpCode) return;
         const state = await loadFullProjectState(userId, corpCode);
-        
+
         setCurrentVersion(state.currentVersion);
         setVersions(state.versions);
         setModifiedSections(state.modifiedSections);
@@ -152,10 +152,10 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
 
   const handleDeleteEditingVersion = useCallback(async () => {
     if (!window.confirm("편집중인 버전을 삭제하시겠습니까?")) return;
-    
+
     try {
       if (!corpCode) return;
-      await dartViewerApi.deleteEditingVersion({ user_id: userId, corp_code: corpCode });
+      await dartViewerApi.deleteVersion({ user_id: userId, corp_code: corpCode, version: currentVersion });
       alert("삭제가 완료되었습니다!");
       localStorage.removeItem("selectedSection");
       setTimeout(() => window.location.reload(), 1000);
@@ -164,7 +164,11 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
       const errorMessage = err.response?.data?.message || err.message || "삭제 중 오류가 발생했습니다.";
       alert(errorMessage);
     }
-  }, [userId]);
+  }, [userId, corpCode, currentVersion]);
+
+  const handleVersionUpdate = useCallback(() => {
+    setCurrentVersion("editing");
+  }, []);
 
   const handleSwitchVersion = useCallback(async (version: string) => {
     if (version === currentVersion) return;
@@ -241,5 +245,6 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
     handleCreateNewVersion,
     handleDeleteEditingVersion,
     handleSwitchVersion,
+    handleVersionUpdate,
   };
 }

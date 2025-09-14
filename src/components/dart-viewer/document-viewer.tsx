@@ -34,6 +34,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
     handleCreateNewVersion,
     handleDeleteEditingVersion,
     handleSwitchVersion,
+    handleVersionUpdate,
   } = useDocumentViewer(123456, corpCode)
 
   return (
@@ -157,6 +158,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
               sectionName={currentSection?.sectionName}
               sectionType={currentSection?.type}
               onSectionModified={handleSectionModified}
+              onVersionUpdate={handleVersionUpdate}
             />
           )}
         </div>
