@@ -106,6 +106,20 @@ export const dartViewerApi = {
     return res;
   },
 
+  deleteVersion: async (payload: unknown) => {
+    const res = await fetch(`http://localhost:8080/api/versions`, {
+      method: 'DELETE',
+      headers: makeHeaders(),
+      body: JSON.stringify(payload)
+    });
+    
+    if (!res.ok) {
+      throw new Error("Fail to delete")
+    }
+
+    return res;
+  },
+
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
     const res = await fetch('http://localhost:8081/check', {
       method: 'POST',
