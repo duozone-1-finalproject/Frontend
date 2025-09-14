@@ -11,7 +11,8 @@ export async function fetchVersionsFromDB(userId: number, corpCode: string): Pro
       corp_code: corpCode
     }
     const response = await dartViewerApi.fetchVersions(payload);
-    return response;
+    // 새로운 응답 구조에서 versions 객체만 반환
+    return response.versions || {};
   } catch (error) {
     console.error('DB에서 버전 데이터 가져오기 오류:', error);
     throw error;
