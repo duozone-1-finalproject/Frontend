@@ -1,3 +1,4 @@
+import axios from '../api/axios';
 import { DocumentSection } from "../types/dartViewer";
 import prettier from "prettier/standalone";
 import parserHtml from "prettier/plugins/html";
@@ -504,17 +505,19 @@ const SECTION_FILES = [
 export async function initializeData(companyCode: string, htmlContent: string): Promise<Record<string, string>> {
   const sectionsData: Record<string, string> = {};
 
-  for (let i = 0; i < SECTION_FILES.length; i++) {
-    const res = await fetch(`/initialTemplate/${SECTION_FILES[i]}`);
-    if(i===4){
-      sectionsData[`section${i + 1}`]=htmlContent;
-    }else{
-      sectionsData[`section${i + 1}`] = await res.text();
-    }
-    
-  }
+  try {
+    // fetch 대신 axios 사용
+    const promises = SECTION_FILES.map(async (fileName, index) => {
+      const response = await axios.get(`/initialTemplate/${fileName}`);
+      sectionsData[`section${index + 1}`] = response.data;
+    });
 
-  return sectionsData;
+    await Promise.all(promises);
+    return sectionsData;
+  } catch (error) {
+    console.error('템플릿 파일 로드 실패:', error);
+    throw error;
+  }
 }
 
 
