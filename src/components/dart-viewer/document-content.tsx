@@ -388,12 +388,15 @@ export function DocumentContent({
             )}
             
             {/* 단계 설명 */}
-            <div className="mt-4 text-xs text-gray-500">
-              {validationStep === 1 && '문서 구조를 분석하고 있습니다...'}
-              {validationStep === 2 && '문서 내용을 추출하고 있습니다...'}
-              {validationStep === 3 && 'AI가 검증을 수행하고 있습니다...'}
-              {validationStep === 4 && '검증 결과를 처리하고 있습니다...'}
+            <div className="mt-4 text-xs text-gray-500" style={{animation: 'blink 1.5s ease-in-out infinite alternate'}}>
+              💡 최대 1분정도 소요됩니다... 잠시만 기다려주세요
             </div>
+            <style>{`
+              @keyframes blink {
+                0% { opacity: 0.4; }
+                100% { opacity: 1; }
+              }
+            `}</style>
           </div>
         </div>
       )}

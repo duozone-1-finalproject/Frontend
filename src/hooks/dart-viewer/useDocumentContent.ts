@@ -288,7 +288,7 @@ export function useDocumentContent({
     
     try {
       // Step 1: 문서 분석 시작
-      setValidationMessage('🔍 문서 구조 분석 중...')
+      setValidationMessage('1️⃣ 문서 구조 분석 중...')
       setValidationProgress(20)
       await delay(800)
       
@@ -297,7 +297,7 @@ export function useDocumentContent({
       
       // Step 2: 내용 추출
       setValidationStep(2)
-      setValidationMessage('📝 문서 내용 추출 중...')
+      setValidationMessage('2️⃣ 문서 내용 추출 중...')
       setValidationProgress(40)
       await delay(600)
       
@@ -306,7 +306,7 @@ export function useDocumentContent({
       
       // Step 3: AI 검증 요청
       setValidationStep(3)
-      setValidationMessage('🤖 AI 검증 분석 중...')
+      setValidationMessage('3️⃣ AI 검증 분석 중...')
       setValidationProgress(60)
       await delay(400)
       
@@ -315,7 +315,7 @@ export function useDocumentContent({
       
       // Step 4: 결과 처리
       setValidationStep(4)
-      setValidationMessage('📊 검증 결과 처리 중...')
+      setValidationMessage('4️⃣ 검증 결과 처리 중...')
       setValidationProgress(80)
       await delay(500)
       
