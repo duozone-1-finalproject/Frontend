@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Download, FileText } from 'lucide-react';
-import { Button } from './common/Button';
+import { Button } from '../common/Button';
 
 interface GuidelineFile {
   name: string;

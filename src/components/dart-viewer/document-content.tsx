@@ -5,7 +5,7 @@ import { Edit3, X, AlertCircle, CheckCircle, MapPin } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
 import { ValidationPanel } from './ValidationPanel'
-import GuidelinesDropdown from '../GuidelinesDropdown'
+import GuidelinesDropdown from './GuidelinesDropdown'
 import { useState } from 'react'
 
 export function DocumentContent({
