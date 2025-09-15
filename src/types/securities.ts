@@ -179,7 +179,7 @@ export interface BaseTemplateData {
   S3_2D_5: string;
 
   // 자금의 사용목적
-  S3_2F_DATA: { se: string; amt: string }[];
+  //S3_2F_DATA: { se: string; amt: string }[];
   S3_2F_1: string;
   S3_2F_2: string;
 
@@ -188,7 +188,7 @@ export interface BaseTemplateData {
   S3_2G_2: string;
 
   // 매출인에 관한 사항
-  S3_2H_DATA: { hdr: string; rlCmp: string; bfslHdstk: string; slstk: string; atslHdstk: string }[];
+  //S3_2H_DATA: { hdr: string; rlCmp: string; bfslHdstk: string; slstk: string; atslHdstk: string }[];
   S3_2H_1: string;
   S3_2H_2: string;
   S3_2H_3: string;

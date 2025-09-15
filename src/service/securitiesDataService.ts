@@ -122,10 +122,10 @@ export class SecuritiesDataService {
         S3_2D_5: formatDate(일반사항?.asstd ?? null) || "-",
 
         // 🆕 새로운 매핑 추가 - 자금의 사용목적 (배열 형태로 저장)
-        S3_2F_DATA: 자금사용목적.map((item: any) => ({
-          se: item.se || "",
-          amt: formatNumber(item.amt) || ""
-        })),
+        // S3_2F_DATA: 자금사용목적.map((item: any) => ({
+        //   se: item.se || "",
+        //   amt: formatNumber(item.amt) || ""
+        // })),
         // 첫 번째 자금사용목적만 개별 변수로도 저장
         S3_2F_1: 자금사용목적[0]?.se || "",
         S3_2F_2: formatNumber(자금사용목적[0]?.amt) || "",
@@ -135,13 +135,13 @@ export class SecuritiesDataService {
         S3_2G_2: formatNumber(일반사항?.exprc) || "",
 
         // 🆕 새로운 매핑 추가 - 매출인에 관한 사항 (배열 형태로 저장)
-        S3_2H_DATA: 매출인사항.map((item: any) => ({
-          hdr: item.hdr || "",
-          rlCmp: item.rlCmp || "",
-          bfslHdstk: formatNumber(item.bfslHdstk) || "",
-          slstk: formatNumber(item.slstk) || "",
-          atslHdstk: formatNumber(item.atslHdstk) || ""
-        })),
+        // S3_2H_DATA: 매출인사항.map((item: any) => ({
+        //   hdr: item.hdr || "",
+        //   rlCmp: item.rlCmp || "",
+        //   bfslHdstk: formatNumber(item.bfslHdstk) || "",
+        //   slstk: formatNumber(item.slstk) || "",
+        //   atslHdstk: formatNumber(item.atslHdstk) || ""
+        // })),
         // 첫 번째 매출인정보만 개별 변수로도 저장
         S3_2H_1: 매출인사항[0]?.hdr || "",
         S3_2H_2: 매출인사항[0]?.rlCmp || "",
