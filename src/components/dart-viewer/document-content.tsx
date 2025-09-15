@@ -5,6 +5,7 @@ import { Edit3, X, AlertCircle, CheckCircle, MapPin } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
 import { ValidationPanel } from './ValidationPanel'
+import GuidelinesDropdown from '../GuidelinesDropdown'
 import { useState } from 'react'
 
 export function DocumentContent({
@@ -253,6 +254,7 @@ export function DocumentContent({
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {!isEditing && isEditable && (
             <>
+              <GuidelinesDropdown />
               <Button
                 onClick={handleEdit}
                 size="sm"
@@ -260,15 +262,15 @@ export function DocumentContent({
                 className="bg-white shadow-md hover:bg-gray-50"
               >
                 <Edit3 className="w-4 h-4 mr-1" />
-                편집 시작
+                편집
               </Button>
               <Button
                 onClick={handleValidateStart}
                 disabled={isValidating}
                 size="sm"
                 variant="outline"
-                className={`${isValidating 
-                  ? 'bg-purple-500 text-white cursor-not-allowed animate-pulse' 
+                className={`${isValidating
+                  ? 'bg-purple-500 text-white cursor-not-allowed animate-pulse'
                   : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
@@ -279,7 +281,7 @@ export function DocumentContent({
                   </div>
                 ) : '검증'}
               </Button>
-              
+
             </>
         )}
 
@@ -291,8 +293,8 @@ export function DocumentContent({
                     onClick={() => setShowValidationPanel(!showValidationPanel)}
                     size="sm"
                     variant="outline"
-                    className={`${showValidationPanel 
-                      ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                    className={`${showValidationPanel
+                      ? 'bg-orange-600 text-white hover:bg-orange-700'
                       : 'bg-white shadow-md hover:bg-gray-50'
                     }`}
                   >
@@ -300,7 +302,7 @@ export function DocumentContent({
                     {showValidationPanel ? '검증창 닫기' : '검증창 보기'}
                   </Button>
                 )}
-                
+
                 <Button
                     onClick={handleImageInsert}
                     size="sm"
@@ -316,7 +318,7 @@ export function DocumentContent({
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {isSaving ? '편집 완료 중...' : '편집 완료'}
+                    {isSaving ? '편집 완료 중...' : '완료'}
                 </Button>
 
                 <Button
