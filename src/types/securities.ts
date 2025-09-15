@@ -203,6 +203,16 @@ export interface BaseTemplateData {
   S3_2I_5: string;
 }
 
+export interface BizTemplateData {
+    htmlContent: string
+}
+
+// 사업보고서
+export interface BizData {
+  recepNo: string;
+  htmlContent: string;
+}
+
 // 투자위험요소 데이터
 export interface RiskData {
   S3_1A_1: string;
@@ -227,11 +237,17 @@ export interface AINotesData {
   S4_NOTE1_5: string;
 }
 
+// 사업보고서 데이터
+export interface BizReportResponse {
+  recepNo : string,
+  htmlContent: string
+}
+
 // AI 응답 전 템플릿 데이터 타입 
 export type BeforeAITemplateData = BaseTemplateData & RiskData;
 
-// 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석)
-export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData;
+// 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석 + 사업보고서)
+export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData & BizTemplateData;
 
 // 진행률 콜백 타입
 export type ProgressCallback = (step: string, progress: number, details?: string) => void;
@@ -242,8 +258,8 @@ export type AiAnnotationState = 'loading' | 'success' | 'error';
 // 최종 서비스 응답 타입
 export interface GenerateSecuritiesDataResponse {
   success: boolean;
-  data: SecuritiesTemplateData | null;
   aiAnnotationState: AiAnnotationState;
+  data: SecuritiesTemplateData | null;
   riskDataState: AiAnnotationState;
   error: string | null;
   duration: number;
