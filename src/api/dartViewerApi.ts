@@ -1,130 +1,120 @@
-const getToken = () => localStorage.getItem("accessToken");
+// dartViewerApi.ts
+import axios from './axios';
 
-/** 공통 헤더 생성 함수 */
-const makeHeaders = (): HeadersInit => {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+// 검증 API를 위한 별도 axios 인스턴스
+const validationApi = axios.create({
+  baseURL: process.env.REACT_APP_VALIDATION_API_URL || "http://localhost:8081",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true,
+});
+
+// 검증 API에도 토큰 인터셉터 적용
+validationApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// 공통 응답 인터셉터 (선택사항)
+validationApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 공통 에러 처리 로직 필요시 여기에 추가
+    return Promise.reject(error);
   }
-  return headers;
-};
+);
 
 export const dartViewerApi = {
   fetchVersions: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions?userId=${userId}`, {
-      method: "GET",
-      headers: makeHeaders(),
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
+    try {
+      const response = await axios.get(`/api/versions`, {
+        params: { userId }
+      });
+      return response.data;
+    } catch (error: any) {
       throw new Error("Failed to fetch versions");
     }
-
-    return res.json();
   },
 
   createVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions', {
-      method: 'POST',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to create!")
+    try {
+      const response = await axios.post('/api/versions', payload);
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Failed to create!");
     }
-    
-    return res.json();
   },
 
   finalizeVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/finalize', {
-      method: 'POST',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to finalize!")
+    try {
+      const response = await axios.post('/api/versions/finalize', payload);
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Failed to finalize!");
     }
-
-    return res.json();
   },
 
   updateEditingVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/editing', {
-      method: 'POST',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Fail to patch")
+    try {
+      const response = await axios.post('/api/versions/editing', payload);
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Fail to patch");
     }
-
-    return res.json();
   },
 
   patchEditingVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/editing', {
-      method: 'PATCH',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Fail to patch")
+    try {
+      const response = await axios.patch('/api/versions/editing', payload);
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Fail to patch");
     }
-
-    return res.json();
   },
 
   deleteEditingVersion: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions/editing`, {
-      method: 'DELETE',
-      headers: makeHeaders(),
-      body: JSON.stringify({
-        user_id: userId,
-      })
-    });
-
-    if (!res.ok) {
-      throw new Error("Fail to delete")
+    try {
+      const response = await axios.delete('/api/versions/editing', {
+        data: {
+          user_id: userId,
+        }
+      });
+      return response;
+    } catch (error: any) {
+      throw new Error("Fail to delete");
     }
-
-    return res;
   },
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
-    const res = await fetch('http://localhost:8081/check', {
-      method: 'POST',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to validate section")
+    try {
+      const response = await validationApi.post('/check', payload);
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Failed to validate section");
     }
-
-    return res.json();
   },
 
   reviseSection: async (payload: { 
-    span: string, reason: string, rule_id: string, evidence: string, suggestion: string, severity: string
+    span: string, 
+    reason: string, 
+    rule_id: string, 
+    evidence: string, 
+    suggestion: string, 
+    severity: string 
   }) => {
-    const res = await fetch('http://localhost:8081/revise', {
-      method: 'POST',
-      headers: makeHeaders(),
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to revise section")
+    try {
+      const response = await validationApi.post('/revise', payload);
+      // 서버가 단순 텍스트를 반환하므로 data를 직접 반환
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Failed to revise section");
     }
-
-    // 서버가 단순 텍스트를 반환하므로 text()로 받기
-    return res.text();
   }
 };
