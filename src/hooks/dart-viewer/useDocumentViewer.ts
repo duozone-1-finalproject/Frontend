@@ -217,6 +217,35 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
     }
   }, [userId, modifiedSections, selectedSection, currentVersion]);
 
+  // 버전 삭제 핸들러
+  const handleDeleteVersion = useCallback(async (versionToDelete: string) => {
+    if (!corpCode) {
+      alert('corpCode가 필요합니다.');
+      return;
+    }
+
+    if (versionToDelete === 'v0') {
+      alert('v0은 초기 버전으로 삭제할 수 없습니다.');
+      return;
+    }
+
+    try {
+      await dartViewerApi.deleteVersion({ user_id: userId, corp_code: corpCode, version: versionToDelete });
+
+      // 버전 목록 새로고침
+      const state = await loadFullProjectState(userId, corpCode);
+      setVersions(state.versions);
+      setModifiedSections(state.modifiedSections);
+      setVersionSectionsData(state.sectionsData);
+
+      alert(`버전 ${versionToDelete}이 성공적으로 삭제되었습니다.`);
+      window.location.reload();
+    } catch (error: any) {
+      console.error('버전 삭제 오류:', error);
+      alert('버전 삭제 중 오류가 발생했습니다.');
+    }
+  }, [userId, corpCode, currentVersion]);
+
   return {
     // Section state
     selectedSection,
@@ -244,6 +273,7 @@ export function useDocumentViewer(userId: number, corpCode: string | null) {
     handleSectionModified,
     handleCreateNewVersion,
     handleDeleteEditingVersion,
+    handleDeleteVersion,
     handleSwitchVersion,
     handleVersionUpdate,
   };

@@ -33,6 +33,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
     handleSectionModified,
     handleCreateNewVersion,
     handleDeleteEditingVersion,
+    handleDeleteVersion,
     handleSwitchVersion,
     handleVersionUpdate,
   } = useDocumentViewer(123456, corpCode)
@@ -56,6 +57,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
                   currentVersion={currentVersion}
                   versions={versions}
                   onVersionSelect={handleSwitchVersion}
+                  onVersionDelete={handleDeleteVersion}
                   disabled={isCreatingVersion}
                 />
               </div>
