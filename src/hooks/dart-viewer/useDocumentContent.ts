@@ -5,22 +5,28 @@ import { ValidationResponse, ValidationIssue } from '../../types/dartViewer'
 
 export interface UseDocumentContentProps {
   userId: number
+  corpCode: string | null
+  companyName: string | null
   htmlContent: string
   sectionId: string
   sectionName?: string
   sectionType?: 'part' | 'section-1' | 'section-2'
   onSectionModified?: (sectionId: string, modifiedHtml: string) => void
   onValidateSection?: (sectionId: string, htmlContent: string) => void
+  onVersionUpdate?: () => void
 }
 
 export function useDocumentContent({
   userId,
+  corpCode,
+  companyName,
   htmlContent,
   sectionId,
   sectionName,
   sectionType,
   onSectionModified,
-  onValidateSection
+  onValidateSection,
+  onVersionUpdate
 }: UseDocumentContentProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -168,14 +174,25 @@ export function useDocumentContent({
         sectionType,
       }
 
-      result = await updateDocumentSection(userId, sectionKey, editedHtml, options);
+      if (!corpCode) {
+        throw new Error('corpCode가 필요합니다.');
+      }
+      if (!companyName) {
+        throw new Error('companyName이 필요합니다.');
+      }
+      result = await updateDocumentSection(userId, corpCode, companyName, sectionKey, editedHtml, options);
       
       setCurrentHtml(editedHtml)
       setOriginalHtml(editedHtml)
       setIsEditing(false)
-      
+
       setSaveMessage('편집이 완료되었습니다. "최종 저장"을 눌러 DB에 저장하세요.')
-      
+
+      // currentVersion을 "editing"으로 업데이트
+      if (onVersionUpdate) {
+        onVersionUpdate()
+      }
+
       setTimeout(() => {
         setSaveMessage('')
       }, 5000)
@@ -271,7 +288,7 @@ export function useDocumentContent({
     
     try {
       // Step 1: 문서 분석 시작
-      setValidationMessage('🔍 문서 구조 분석 중...')
+      setValidationMessage('1️⃣ 문서 구조 분석 중...')
       setValidationProgress(20)
       await delay(800)
       
@@ -280,7 +297,7 @@ export function useDocumentContent({
       
       // Step 2: 내용 추출
       setValidationStep(2)
-      setValidationMessage('📝 문서 내용 추출 중...')
+      setValidationMessage('2️⃣ 문서 내용 추출 중...')
       setValidationProgress(40)
       await delay(600)
       
@@ -289,7 +306,7 @@ export function useDocumentContent({
       
       // Step 3: AI 검증 요청
       setValidationStep(3)
-      setValidationMessage('🤖 AI 검증 분석 중...')
+      setValidationMessage('3️⃣ AI 검증 분석 중...')
       setValidationProgress(60)
       await delay(400)
       
@@ -298,7 +315,7 @@ export function useDocumentContent({
       
       // Step 4: 결과 처리
       setValidationStep(4)
-      setValidationMessage('📊 검증 결과 처리 중...')
+      setValidationMessage('4️⃣ 검증 결과 처리 중...')
       setValidationProgress(80)
       await delay(500)
       

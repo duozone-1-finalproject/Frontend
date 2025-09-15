@@ -11,11 +11,22 @@ const makeHeaders = (): HeadersInit => {
 };
 
 export const dartViewerApi = {
-  fetchVersions: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions?userId=${userId}`, {
+  fetchAllCompanies: async (user_id: number) => {
+    const res = await fetch(`http://localhost:8080/api/versions/companies?userId=${user_id}`, {
       method: "GET",
+      headers: makeHeaders()
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch companies");
+    }
+    return res.json();
+  },
+
+  fetchCompanyVersions: async (payload: { user_id: number; corp_code: string }) => {
+    const res = await fetch(`http://localhost:8080/api/versions/search`, {
+      method: "POST",
       headers: makeHeaders(),
-      cache: "no-store",
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
@@ -81,15 +92,13 @@ export const dartViewerApi = {
     return res.json();
   },
 
-  deleteEditingVersion: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions/editing`, {
+  deleteVersion: async (payload: unknown) => {
+    const res = await fetch(`http://localhost:8080/api/versions`, {
       method: 'DELETE',
       headers: makeHeaders(),
-      body: JSON.stringify({
-        user_id: userId,
-      })
+      body: JSON.stringify(payload)
     });
-
+    
     if (!res.ok) {
       throw new Error("Fail to delete")
     }
@@ -97,8 +106,23 @@ export const dartViewerApi = {
     return res;
   },
 
+  deleteCompany: async (payload: unknown) => {
+    const res = await fetch(`http://localhost:8080/api/versions/company`, {
+      method: 'DELETE',
+      headers: makeHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error("Fail to delete")
+    }
+
+    return res;
+  
+  },
+
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
-    const res = await fetch('http://localhost:8081/check', {
+    const res = await fetch('http://localhost:8080/api/validation/check', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -114,7 +138,7 @@ export const dartViewerApi = {
   reviseSection: async (payload: { 
     span: string, reason: string, rule_id: string, evidence: string, suggestion: string, severity: string
   }) => {
-    const res = await fetch('http://localhost:8081/revise', {
+    const res = await fetch('http://localhost:8080/api/validation/revise', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -124,7 +148,6 @@ export const dartViewerApi = {
       throw new Error("Failed to revise section")
     }
 
-    // 서버가 단순 텍스트를 반환하므로 text()로 받기
-    return res.text();
+    return res.json();
   }
 };
