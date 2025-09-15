@@ -26,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   todayEvents,
   showUserMenu,
   userName,
-  userId = 123456,
+  userId = 123,
   companies,
   companiesLoading,
   onProfileClick,

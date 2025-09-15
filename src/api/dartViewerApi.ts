@@ -78,7 +78,7 @@ export const dartViewerApi = {
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
     try {
-      const response = await axios.post('/check', payload);
+      const response = await axios.post('api/validation/check', payload);
       return response.data;
     } catch (error: any) {
       throw new Error("Failed to validate section");
@@ -94,7 +94,7 @@ export const dartViewerApi = {
     severity: string 
   }) => {
     try {
-      const response = await axios.post('/revise', payload);
+      const response = await axios.post('api/validation/revise', payload);
       return response.data;
     } catch (error: any) {
       throw new Error("Failed to revise section");

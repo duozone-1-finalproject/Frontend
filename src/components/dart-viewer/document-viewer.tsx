@@ -36,7 +36,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
     handleDeleteVersion,
     handleSwitchVersion,
     handleVersionUpdate,
-  } = useDocumentViewer(123456, corpCode)
+  } = useDocumentViewer(123, corpCode)
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -158,7 +158,7 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
             </div>
           ) : (
             <DocumentContent
-              userId={123456}
+              userId={123}
               corpCode={corpCode}
               companyName={companyName}
               htmlContent={currentSectionHTML}

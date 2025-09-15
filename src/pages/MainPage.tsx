@@ -43,12 +43,12 @@ const MainPage: React.FC = () => {
 
   // 회사 삭제 후 목록 새로고침
   const handleCompanyDeleted = (corpCode: string) => {
-    loadCompanies(123456); // 강제 새로고침
+    loadCompanies(123); // 강제 새로고침
   };
 
   // 페이지 로드 시 회사 목록 미리 로드
   useEffect(() => {
-    loadCompanies(123456);
+    loadCompanies(123);
   }, []);
 
   // 오늘 일정 가져오기
@@ -62,7 +62,7 @@ const MainPage: React.FC = () => {
         todayEvents={todayEvents}
         showUserMenu={showUserMenu}
         userName={user?.name}
-        userId={123456}
+        userId={123}
         companies={companies}
         companiesLoading={companiesLoading}
         onProfileClick={handleProfileClick}

@@ -21,7 +21,9 @@ export async function fetchVersionsFromDB(userId: number, corpCode: string): Pro
 
 export async function loadFullProjectState(userId: number, corpCode: string): Promise<ProjectState & { sectionsData: Record<string, string> }> {
   try {
+    console.log("userId: ", userId, "corpCode: ", corpCode)
     const versionsData = await fetchVersionsFromDB(userId, corpCode);
+    console.log("versionsData:", versionsData)
     const versionKeys = Object.keys(versionsData);
     
     if (!versionsData || versionKeys.length === 0) {
@@ -164,13 +166,14 @@ export async function updateDocumentSection(
 
 export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
   try {
-    const versionsData = await fetchVersionsFromDB(userId, templateData.corp_code);
+    const companyCode = templateData.corp_code;
+    const versionsData = await fetchVersionsFromDB(userId, companyCode);
 
     if (versionsData.v0) {
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
     }
     // 기본 템플릿 데이터 로드
-    const initialSectionsData = await initializeData(companyCode, templateData.htmlContent);
+    const initialSectionsData = await initializeData();
     
     // 각 섹션에 템플릿 데이터 적용
     const filledSectionsData: Record<string, string> = {};
