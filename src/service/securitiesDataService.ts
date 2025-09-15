@@ -1,5 +1,5 @@
 // services/securitiesDataService.ts
-import axiosInstance from '../api/axios';
+import { securitiesApi } from '../api/securitiesApi';
 import { formatNumber, formatDate, getDefaultNote, splitTextIntoParagraphs, getCurrentDateVariables } from '../lib/securitiesHelpers';
 import type { 
   AIAnnotationRequest, 
@@ -11,10 +11,7 @@ import type {
   GenerateSecuritiesDataResponse,
   ProgressCallback,
   BeforeAITemplateData,
-  RiskApiResponse,
-  CompanyDataResponse,
-  AIAnnotationResponse,
-  EtcMattersResponse
+  RiskApiResponse
 } from '../types/securities';
 
 // 메인 데이터 서비스 클래스
@@ -25,217 +22,121 @@ export class SecuritiesDataService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // Axios 기반 API 호출 메서드들
-  private static async fetchCompanyDataFromApi(companyCode: string): Promise<CompanyDataResponse> {
-    try {
-      const response = await axiosInstance.get(`/api/dart/test/${companyCode}/all-data`);
-      return response.data;
-    } catch (error: any) {
-      console.error("❌ [API Error] 회사 데이터 API 호출 실패:", error);
-      throw new Error(error.response?.data?.message || "회사 데이터 조회 실패");
-    }
-  }
-
-  private static async fetchEtcMattersFromApi(companyName: string): Promise<EtcMattersResponse> {
-    try {
-      const response = await axiosInstance.get('/api/dart/reports/etc-matters', {
-        params: { companyName }
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error("❌ [API Error] 기타 사항 API 호출 실패:", error);
-      throw new Error(error.response?.data?.message || "기타 사항 조회 실패");
-    }
-  }
-
-  private static async fetchRiskDataFromApi(companyCode: string): Promise<RiskData> {
-    try {
-      const response = await axiosInstance.get(`/api/securities/risk/${companyCode}`);
-      
-      // API 응답 구조에 따라 조정 필요
-      const responseData = response.data;
-      
-      // 만약 response.data.data 구조라면
-      if (responseData.data) {
-        return responseData.data as RiskData;
-      }
-      
-      // 직접 RiskData 구조라면
-      return responseData as RiskData;
-    } catch (error: any) {
-      console.error("❌ [API Error] 투자위험요소 API 호출 실패:", error);
-      throw new Error(error.response?.data?.message || "투자위험요소 조회 실패");
-    }
-  }
-
-  private static async generateAIAnnotationsFromApi(requestData: AIAnnotationRequest): Promise<AIAnnotationResponse> {
-    try {
-      const response = await axiosInstance.post(`/api/securities/ai/annotations`, requestData);
-      
-      // HTML 응답 체크 (인증 실패 시 로그인 페이지)
-      if (typeof response.data === 'string' && response.data.includes('<form') && response.data.includes('login')) {
-        throw new Error('AI 주석 생성 API에 인증이 필요합니다. 로그인 후 다시 시도하거나 백엔드에서 해당 엔드포인트를 공개 API로 설정해주세요.');
-      }
-      
-      return response.data;
-    } catch (error: any) {
-      console.error("❌ [API Error] AI 주석 생성 API 호출 실패:", error);
-      
-      if (error.message.includes('인증이 필요합니다')) {
-        throw error; // 인증 에러는 그대로 전달
-      }
-      
-      throw new Error(error.response?.data?.message || error.message || "AI 주석 생성 실패");
-    }
-  }
-
   // 1-1. 기본 회사 데이터만 가져오기 (빠른 API)
   static async fetchBasicCompanyData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BaseTemplateData>> {
     try {      
       onProgress?.("📡 회사 기본 정보 조회 중", 15, "DART API에서 회사 데이터를 가져오는 중...");
 
-      const response = await this.fetchCompanyDataFromApi(companyCode);
-      
-      // API 응답 구조 디버깅
-      console.log("🔍 [Debug] Company API 전체 응답:", response);
-      console.log("🔍 [Debug] response.data:", response.data);
-      
-      // 안전한 데이터 접근
+      const response = await securitiesApi.fetchCompanyData(companyCode);
       const apiData = response.data;
-      if (!apiData) {
-        throw new Error("API 응답 데이터가 없습니다.");
-      }
-      
-      console.log("🔍 [Debug] apiData 구조:", Object.keys(apiData));
-      
-      // companyOverview 안전 체크
-      const companyOverview = apiData.companyOverview;
-      if (!companyOverview) {
-        console.error("❌ companyOverview가 없습니다. API 응답 구조:", apiData);
-        throw new Error("회사 개요 데이터가 API 응답에 없습니다. 백엔드 API 응답 형식을 확인해주세요.");
-      }
-      
-      // equitySecurities 안전 체크  
-      const equitySecurities = apiData.equitySecurities;
-      if (!equitySecurities || !equitySecurities.group) {
-        console.warn("⚠️ equitySecurities 데이터가 없습니다.");
-      }
-
-      // 기타 사항 조회 (안전한 회사명 사용)
-      const companyName = companyOverview.corpName || "Unknown";
-      let response_etc;
-      try {
-        response_etc = await this.fetchEtcMattersFromApi(companyName);
-      } catch (error) {
-        console.warn("⚠️ 기타 사항 조회 실패, 기본값 사용:", error);
-        response_etc = { data: "" };
-      }
+      const response_etc = await securitiesApi.fetchEtcMatters(apiData.companyOverview?.corpName || "");
 
       onProgress?.("⚙️ 회사 데이터 분석 중", 25, "증권 정보 및 회사 개요 데이터를 구조화하는 중...");
 
-      // 각 그룹별로 데이터 추출 (안전하게)
-      const groups = equitySecurities?.group || [];
+      // 각 그룹별로 데이터 추출
+      const groups = apiData.equitySecurities?.group || [];
 
       // 각 섹션별로 데이터 찾기
       const findGroup = (title: string) => groups.find((g: any) => g.title === title);
 
-      // 현재 날짜 변수 추가
+      // 🆕 현재 날짜 변수 추가
       const currentDateVars = getCurrentDateVariables();
         
-      const 증권종류 = findGroup("증권의종류")?.list?.[0] || {};
-      const 인수인정보 = findGroup("인수인정보")?.list?.[0] || {};
-      const 일반사항 = findGroup("일반사항")?.list?.[0] || {};
+      const 증권종류 = findGroup("증권의종류")?.list?.[0];
+      const 인수인정보 = findGroup("인수인정보")?.list?.[0];
+      const 일반사항 = findGroup("일반사항")?.list?.[0];
       const 자금사용목적 = findGroup("자금의사용목적")?.list || [];
       const 매출인사항 = findGroup("매출인에관한사항")?.list || [];
-      const 환매청구권 = findGroup("일반청약자환매청구권")?.list?.[0] || {};
+      const 환매청구권 = findGroup("일반청약자환매청구권")?.list?.[0];
         
-      const mappedData: BaseTemplateData = {
-        // 현재 날짜 변수 추가
+      const mappedData = {
+        // 🆕 현재 날짜 변수 추가
         ...currentDateVars,
 
-        // 기존 매핑 (안전한 접근)
-        S1_1A_4: companyOverview.corpName || "",
-        S1_1A_5: companyOverview.ceoNm || "",
-        S1_1A_6: companyOverview.adres || "",
-        S1_1A_7: companyOverview.phnNo || "",
-        S1_1A_8: companyOverview.hmUrl || "",
-        S1_1A_C: 증권종류.stksen || "",
-        S1_1A_D: formatNumber(증권종류.stkcnt) || "",
-        S1_1A_E: formatNumber(증권종류.slta) || "",
+        // 기존 매핑 유지
+        S1_1A_4: apiData.companyOverview?.corpName,
+        S1_1A_5: apiData.companyOverview?.ceoNm,
+        S1_1A_6: apiData.companyOverview?.adres,
+        S1_1A_7: apiData.companyOverview?.phnNo,
+        S1_1A_8: apiData.companyOverview?.hmUrl,
+        S1_1A_C: 증권종류?.stksen || "",
+        S1_1A_D: formatNumber(증권종류?.stkcnt),
+        S1_1A_E: formatNumber(증권종류?.slta),
 
-        corp_code: companyOverview.corpCode || "",
-        company_name: companyOverview.corpName || "",
-        ceo_name: companyOverview.ceoNm || "",
-        address: companyOverview.adres || "",
-        establishment_date: companyOverview.estDt || "",
-        company_phone: companyOverview.phnNo || "",
-        company_website: companyOverview.hmUrl || "",
+        corp_code: apiData.companyOverview?.corpCode,
+        company_name: apiData.companyOverview?.corpName,
+        ceo_name: apiData.companyOverview?.ceoNm,
+        address: apiData.companyOverview?.adres,
+        establishment_date: apiData.companyOverview?.estDt,
+        company_phone: apiData.companyOverview?.phnNo,
+        company_website: apiData.companyOverview?.hmUrl,
+        S1_1D_1: response_etc?.data || "",
 
-        S4_11A_1: 증권종류.stksen || "",
-        S4_11A_2: formatNumber(증권종류.stkcnt) || "",
-        S4_11A_3: formatNumber(증권종류.fv) || "",
-        S4_11A_4: formatNumber(증권종류.slprc) || "",
-        S4_11A_5: formatNumber(증권종류.slta) || "",
-        S4_11A_6: 증권종류.slmthn || "",
+        S4_11A_1: 증권종류?.stksen || "",
+        S4_11A_2: formatNumber(증권종류?.stkcnt),
+        S4_11A_3: formatNumber(증권종류?.fv),
+        S4_11A_4: formatNumber(증권종류?.slprc),
+        S4_11A_5: formatNumber(증권종류?.slta),
+        S4_11A_6: 증권종류?.slmthn || "",
 
-        S4_11B_1: 인수인정보.actsen || "",
-        S4_11B_2: 인수인정보.actnmn || "",
-        S4_11B_3: 인수인정보.stksen || "",
-        S4_11B_4: formatNumber(인수인정보.udtcnt) || "",
-        S4_11B_5: formatNumber(인수인정보.udtamt) || "",
-        S4_11B_6: formatNumber(인수인정보.udtprc) || "",
-        S4_11B_7: 인수인정보.udtmth || "",
+        S4_11B_1: 인수인정보?.actsen || "",
+        S4_11B_2: 인수인정보?.actnmn || "",
+        S4_11B_3: 인수인정보?.stksen || "",
+        S4_11B_4: formatNumber(인수인정보?.udtcnt),
+        S4_11B_5: formatNumber(인수인정보?.udtamt),
+        S4_11B_6: formatNumber(인수인정보?.udtprc),
+        S4_11B_7: 인수인정보?.udtmth || "",
 
-        S4_11C_1: 일반사항.sbd || "",
-        S4_11C_2: formatDate(일반사항.pymd ?? null) || "",
-        S4_11C_3: formatDate(일반사항.sband ?? null) || "",
-        S4_11C_4: formatDate(일반사항.asand ?? null) || "",
-        S4_11C_5: formatDate(일반사항.asstd ?? null) || "-",
+        S4_11C_1: 일반사항?.sbd || "",
+        S4_11C_2: formatDate(일반사항?.pymd ?? null) || "",
+        S4_11C_3: formatDate(일반사항?.sband ?? null) || "",
+        S4_11C_4: formatDate(일반사항?.asand ?? null) || "",
+        S4_11C_5: formatDate(일반사항?.asstd ?? null) || "-",
 
-        // 새로운 매핑 추가 - 증권의 종류
-        S3_2A_1: 증권종류.stksen || "",
-        S3_2A_2: formatNumber(증권종류.stkcnt) || "",
-        S3_2A_3: formatNumber(증권종류.fv) || "",
-        S3_2A_4: formatNumber(증권종류.slprc) || "",
-        S3_2A_5: formatNumber(증권종류.slta) || "",
-        S3_2A_6: 증권종류.slmthn || "",
+        // 🆕 새로운 매핑 추가 - 증권의 종류
+        S3_2A_1: 증권종류?.stksen || "",
+        S3_2A_2: formatNumber(증권종류?.stkcnt),
+        S3_2A_3: formatNumber(증권종류?.fv),
+        S3_2A_4: formatNumber(증권종류?.slprc),
+        S3_2A_5: formatNumber(증권종류?.slta),  // ✅ 수정: 누락되었던 모집(매출)총액 매핑
+        S3_2A_6: 증권종류?.slmthn || "",
 
-        // 새로운 매핑 추가 - 인수인정보
-        S3_2C_0: 인수인정보.actsen || "",
-        S3_2C_1: 인수인정보.actnmn || "",
-        S3_2C_2: 인수인정보.stksen || "",
-        S3_2C_3: formatNumber(인수인정보.udtamt) || "",
-        S3_2C_4: formatNumber(인수인정보.udtamt) || "",
-        S3_2C_5: formatNumber(인수인정보.udtprc) || "",
-        S3_2C_6: 인수인정보.udtmth || "",
+        // 🆕 새로운 매핑 추가 - 인수인정보
+        S3_2C_0: 인수인정보?.actsen || "",
+        S3_2C_1: 인수인정보?.actnmn || "",
+        S3_2C_2: 인수인정보?.stksen || "",
+        S3_2C_3: formatNumber(인수인정보?.udtamt),
+        S3_2C_4: formatNumber(인수인정보?.udtamt),  // ✅ 수정: 인수금액 매핑 (udtamt를 사용)
+        S3_2C_5: formatNumber(인수인정보?.udtprc),
+        S3_2C_6: 인수인정보?.udtmth || "",
 
-        // 새로운 매핑 추가 - 일반사항
-        S3_2D_1: 일반사항.sbd || "",
-        S3_2D_2: formatDate(일반사항.pymd ?? null) || "",
-        S3_2D_3: formatDate(일반사항.sband ?? null) || "",
-        S3_2D_4: formatDate(일반사항.asand ?? null) || "",
-        S3_2D_5: formatDate(일반사항.asstd ?? null) || "-",
+        // 🆕 새로운 매핑 추가 - 일반사항
+        S3_2D_1: 일반사항?.sbd || "",
+        S3_2D_2: formatDate(일반사항?.pymd ?? null) || "",  // ✅ 수정: 납입기일 매핑 (pymd를 사용)
+        S3_2D_3: formatDate(일반사항?.sband ?? null) || "",
+        S3_2D_4: formatDate(일반사항?.asand ?? null) || "",
+        S3_2D_5: formatDate(일반사항?.asstd ?? null) || "-",
 
-        // 새로운 매핑 추가 - 자금의 사용목적 (배열 형태로 저장)
+        // 🆕 새로운 매핑 추가 - 자금의 사용목적 (배열 형태로 저장)
         S3_2F_DATA: 자금사용목적.map((item: any) => ({
-          se: item?.se || "",
-          amt: formatNumber(item?.amt) || ""
+          se: item.se || "",
+          amt: formatNumber(item.amt) || ""
         })),
         // 첫 번째 자금사용목적만 개별 변수로도 저장
         S3_2F_1: 자금사용목적[0]?.se || "",
         S3_2F_2: formatNumber(자금사용목적[0]?.amt) || "",
 
-        // 새로운 매핑 추가 - 신주인수권에 관한 사항 (일반사항에서 가져옴)
-        S3_2G_1: 일반사항.exstk || "",
-        S3_2G_2: formatNumber(일반사항.exprc) || "",
+        // 🆕 새로운 매핑 추가 - 신주인수권에 관한 사항 (일반사항에서 가져옴)
+        S3_2G_1: 일반사항?.exstk || "",
+        S3_2G_2: formatNumber(일반사항?.exprc) || "",
 
-        // 새로운 매핑 추가 - 매출인에 관한 사항 (배열 형태로 저장)
+        // 🆕 새로운 매핑 추가 - 매출인에 관한 사항 (배열 형태로 저장)
         S3_2H_DATA: 매출인사항.map((item: any) => ({
-          hdr: item?.hdr || "",
-          rlCmp: item?.rlCmp || "",
-          bfslHdstk: formatNumber(item?.bfslHdstk) || "",
-          slstk: formatNumber(item?.slstk) || "",
-          atslHdstk: formatNumber(item?.atslHdstk) || ""
+          hdr: item.hdr || "",
+          rlCmp: item.rlCmp || "",
+          bfslHdstk: formatNumber(item.bfslHdstk) || "",
+          slstk: formatNumber(item.slstk) || "",
+          atslHdstk: formatNumber(item.atslHdstk) || ""
         })),
         // 첫 번째 매출인정보만 개별 변수로도 저장
         S3_2H_1: 매출인사항[0]?.hdr || "",
@@ -244,15 +145,13 @@ export class SecuritiesDataService {
         S3_2H_4: formatNumber(매출인사항[0]?.slstk) || "",
         S3_2H_5: formatNumber(매출인사항[0]?.atslHdstk) || "",
 
-        // 새로운 매핑 추가 - 일반청약자환매청구권
-        S3_2I_1: 환매청구권.grtrs || "",
-        S3_2I_2: 환매청구권.exavivr || "",
-        S3_2I_3: formatNumber(환매청구권.grtcnt) || "",
-        S3_2I_4: 환매청구권.expd || "",
-        S3_2I_5: formatNumber(환매청구권.exprc) || ""
+        // 🆕 새로운 매핑 추가 - 일반청약자환매청구권
+        S3_2I_1: 환매청구권?.grtrs || "",
+        S3_2I_2: 환매청구권?.exavivr || "",
+        S3_2I_3: formatNumber(환매청구권?.grtcnt) || "",
+        S3_2I_4: 환매청구권?.expd || "",
+        S3_2I_5: formatNumber(환매청구권?.exprc) || ""
       };
-
-      console.log("✅ [Success] 매핑된 기본 데이터:", mappedData);
 
       return {
         success: true,
@@ -268,51 +167,50 @@ export class SecuritiesDataService {
     }
   }
 
-  // 1-2. 투자위험요소 데이터만 가져오기 (수정된 버전)
-  static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<RiskData>> {
-    try {
-      onProgress?.("🔍 투자위험요소 데이터 조회 중", 40, "AI 투자위험요소 정보를 가져오는 중...");
-      console.log(`📊 [Risk Request] 회사 투자위험요소 요청 시작: ${companyCode}`);
-      
-      // Axios 기반 API 호출
-      const riskData: RiskData = await this.fetchRiskDataFromApi(companyCode);
-      
-      console.log("🔎 [Risk Response] riskData:", riskData);
-      console.log("🔎 [Risk Keys]:", Object.keys(riskData || {}));
-      console.log("S3_1A_1", riskData?.S3_1A_1);
-      console.log("S3_1B_1", riskData?.S3_1B_1);
-      console.log("S3_1C_1", riskData?.S3_1C_1);
-      
-      if (riskData) {
-        const processedData: RiskData = {
-          S3_1A_1: riskData.S3_1A_1 || "",
-          S3_1B_1: riskData.S3_1B_1 || "",
-          S3_1C_1: riskData.S3_1C_1 || "",
-        };
-
-        console.log("✅ [Risk Success] 투자위험요소 데이터 조회 완료:", processedData);
-        return {
-          success: true,
-          data: processedData
-        };
-      } else {
-        throw new Error("투자위험요소 데이터가 null입니다");
-      }
-      
-    } catch (error: any) {
-      console.error("❌ [Risk Error] 투자위험요소 데이터 로딩 실패:", error);
-      return {
-        success: false,
-        error: error.message || "투자위험요소 데이터 로드 실패",
-        data: {
-          S3_1A_1: "",
-          S3_1B_1: "",
-          S3_1C_1: "",
-        }
+// 1-2. 투자위험요소 데이터만 가져오기 (수정된 버전)
+static async fetchRiskData(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<RiskData>> {
+  try {
+    onProgress?.("🔍 투자위험요소 데이터 조회 중", 40, "AI 투자위험요소 정보를 가져오는 중...");
+    console.log(`📊 [Risk Request] 회사 투자위험요소 요청 시작: ${companyCode}`);
+    
+    // securitiesApi.fetchRiskData가 이미 RiskData를 반환함
+    const riskData: RiskData = await securitiesApi.fetchRiskData(companyCode);
+    
+    console.log("🔎 [Risk Response] riskData:", riskData);
+    console.log("🔎 [Risk Keys]:", Object.keys(riskData || {}));
+    console.log("S3_1A_1", riskData?.S3_1A_1);
+    console.log("S3_1B_1", riskData?.S3_1B_1);
+    console.log("S3_1C_1", riskData?.S3_1C_1);
+    
+    if (riskData) {
+      const processedData: RiskData = {
+        S3_1A_1: riskData.S3_1A_1 || "",
+        S3_1B_1: riskData.S3_1B_1 || "",
+        S3_1C_1: riskData.S3_1C_1 || "",
       };
-    }
-  }
 
+      console.log("✅ [Risk Success] 투자위험요소 데이터 조회 완료:", processedData);
+      return {
+        success: true,
+        data: processedData
+      };
+    } else {
+      throw new Error("투자위험요소 데이터가 null입니다");
+    }
+    
+  } catch (error: any) {
+    console.error("❌ [Risk Error] 투자위험요소 데이터 로딩 실패:", error);
+    return {
+      success: false,
+      error: error.message || "투자위험요소 데이터 로드 실패",
+      data: {
+        S3_1A_1: "",
+        S3_1B_1: "",
+        S3_1C_1: "",
+      }
+    };
+  }
+}
   // 1. 템플릿 데이터 가져오기 (진행 상황 추가) - 레거시 호환용
   static async fetchTemplateData(companyCode: string = '01571107', onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BeforeAITemplateData>> {
     try {
@@ -383,18 +281,23 @@ export class SecuritiesDataService {
 
       onProgress?.("🤖 AI 주석 생성 중", 50, "AI가 전문적인 주석을 작성하는 중...");
       
-      const response = await this.generateAIAnnotationsFromApi(equityRequestData);
+      const response = await securitiesApi.generateEquityAnnotations(equityRequestData);
       onProgress?.("🤖 AI 검토 단계", 60, "생성된 주석의 품질을 검증하는 중...");
 
-      console.log("🔎 [AI Response Raw] response:", response);
+      console.log("🔎 [AI Response Raw] response.data:", response);
       console.log("🔎 [AI Response Keys]", Object.keys(response || {}));
+      if (response) {
+        console.log("🔎 [AI Response.data Keys]", Object.keys(response || {}));
+      }
 
-      const generatedNotes: AINotesData = {
-        S4_NOTE1_1: response.S4_NOTE1_1 || getDefaultNote(1),
-        S4_NOTE1_2: response.S4_NOTE1_2 || getDefaultNote(2),
-        S4_NOTE1_3: response.S4_NOTE1_3 || getDefaultNote(3),
-        S4_NOTE1_4: response.S4_NOTE1_4 || getDefaultNote(4),
-        S4_NOTE1_5: response.S4_NOTE1_5 || getDefaultNote(5)
+      const aiResponse = response;
+
+      const generatedNotes = {
+        S4_NOTE1_1: aiResponse.S4_NOTE1_1 || getDefaultNote(1),
+        S4_NOTE1_2: aiResponse.S4_NOTE1_2 || getDefaultNote(2),
+        S4_NOTE1_3: aiResponse.S4_NOTE1_3 || getDefaultNote(3),
+        S4_NOTE1_4: aiResponse.S4_NOTE1_4 || getDefaultNote(4),
+        S4_NOTE1_5: aiResponse.S4_NOTE1_5 || getDefaultNote(5)
       };
 
       console.log("✅ [AI Success] 주식 공모 주석 생성 완료:", generatedNotes);
@@ -407,7 +310,7 @@ export class SecuritiesDataService {
       console.error("❌ [AI Error] 주식 공모 주석 생성 실패:", error);
 
       // 에러 시 기본 주석 반환
-      const fallbackNotes: AINotesData = {
+      const fallbackNotes = {
         S4_NOTE1_1: `(오류) AI 주석 생성에 실패했습니다: ${error.message}`,
         S4_NOTE1_2: "(오류) AI 주석 생성에 실패했습니다.",
         S4_NOTE1_3: "(오류) AI 주석 생성에 실패했습니다.",
@@ -526,7 +429,7 @@ export class SecuritiesDataService {
   }
 
   // 5. 기본 주석 생성 (AI 실패 시 대안)
-  static generateDefaultNotes(): AINotesData {
+  static generateDefaultNotes() {
     return {
       S4_NOTE1_1: getDefaultNote(1),
       S4_NOTE1_2: getDefaultNote(2),
@@ -640,36 +543,6 @@ export class SecuritiesDataService {
       "{{S1_1A_2}}": data.S1_1A_2 || "",  // 월 (09)
       "{{S1_1A_3}}": data.S1_1A_3 || "",  // 일 (12)
 
-      // 기본 회사 정보
-      "{{S1_1A_4}}": data.S1_1A_4 || "",  // 회사명
-      "{{S1_1A_5}}": data.S1_1A_5 || "",  // 대표이사
-      "{{S1_1A_6}}": data.S1_1A_6 || "",  // 주소
-      "{{S1_1A_7}}": data.S1_1A_7 || "",  // 전화번호
-      "{{S1_1A_8}}": data.S1_1A_8 || "",  // 홈페이지
-      "{{S1_1A_C}}": data.S1_1A_C || "",  // 증권종류
-      "{{S1_1A_D}}": data.S1_1A_D || "",  // 증권수량
-      "{{S1_1A_E}}": data.S1_1A_E || "",  // 총액
-
-      // S4 섹션 (공모 정보)
-      "{{S4_11A_1}}": data.S4_11A_1 || "",
-      "{{S4_11A_2}}": data.S4_11A_2 || "",
-      "{{S4_11A_3}}": data.S4_11A_3 || "",
-      "{{S4_11A_4}}": data.S4_11A_4 || "",
-      "{{S4_11A_5}}": data.S4_11A_5 || "",
-      "{{S4_11A_6}}": data.S4_11A_6 || "",
-      "{{S4_11B_1}}": data.S4_11B_1 || "",
-      "{{S4_11B_2}}": data.S4_11B_2 || "",
-      "{{S4_11B_3}}": data.S4_11B_3 || "",
-      "{{S4_11B_4}}": data.S4_11B_4 || "",
-      "{{S4_11B_5}}": data.S4_11B_5 || "",
-      "{{S4_11B_6}}": data.S4_11B_6 || "",
-      "{{S4_11B_7}}": data.S4_11B_7 || "",
-      "{{S4_11C_1}}": data.S4_11C_1 || "",
-      "{{S4_11C_2}}": data.S4_11C_2 || "",
-      "{{S4_11C_3}}": data.S4_11C_3 || "",
-      "{{S4_11C_4}}": data.S4_11C_4 || "",
-      "{{S4_11C_5}}": data.S4_11C_5 || "",
-
       // 증권의 종류 매핑
       "{{S3_2A_1}}": data.S3_2A_1 || "",
       "{{S3_2A_2}}": data.S3_2A_2 || "",
@@ -693,18 +566,6 @@ export class SecuritiesDataService {
       "{{S3_2D_3}}": data.S3_2D_3 || "",
       "{{S3_2D_4}}": data.S3_2D_4 || "",
       "{{S3_2D_5}}": data.S3_2D_5 || "",
-
-      // 투자위험요소 매핑
-      "{{S3_1A_1}}": data.S3_1A_1 || "",
-      "{{S3_1B_1}}": data.S3_1B_1 || "",
-      "{{S3_1C_1}}": data.S3_1C_1 || "",
-
-      // AI 주석 매핑
-      "{{S4_NOTE1_1}}": data.S4_NOTE1_1 || "",
-      "{{S4_NOTE1_2}}": data.S4_NOTE1_2 || "",
-      "{{S4_NOTE1_3}}": data.S4_NOTE1_3 || "",
-      "{{S4_NOTE1_4}}": data.S4_NOTE1_4 || "",
-      "{{S4_NOTE1_5}}": data.S4_NOTE1_5 || "",
 
       // 자금사용목적 매핑
       "{{S3_2F_1}}": data.S3_2F_1 || "",
@@ -780,137 +641,6 @@ export class SecuritiesDataService {
     }
   }
 
-  // 🆕 12. 개별 API 호출 메서드들 (필요한 경우 외부에서 직접 사용 가능)
-  static async callCompanyDataAPI(companyCode: string) {
-    return await this.fetchCompanyDataFromApi(companyCode);
-  }
-
-  static async callRiskDataAPI(companyCode: string) {
-    return await this.fetchRiskDataFromApi(companyCode);
-  }
-
-  static async callAIAnnotationsAPI(requestData: AIAnnotationRequest) {
-    return await this.generateAIAnnotationsFromApi(requestData);
-  }
-
-  static async callEtcMattersAPI(companyName: string) {
-    return await this.fetchEtcMattersFromApi(companyName);
-  }
-
-  // 🆕 13. 에러 핸들링 헬퍼 함수
-  static handleApiError(error: any, context: string) {
-    console.error(`❌ [${context} Error]`, error);
-    
-    if (error.response) {
-      // 서버가 응답을 반환했지만 에러 상태 코드
-      const status = error.response.status;
-      const message = error.response.data?.message || error.response.statusText;
-      
-      switch (status) {
-        case 400:
-          return `잘못된 요청입니다: ${message}`;
-        case 401:
-          return "인증이 필요합니다. 로그인 후 다시 시도해주세요.";
-        case 403:
-          return "접근 권한이 없습니다.";
-        case 404:
-          return "요청한 데이터를 찾을 수 없습니다.";
-        case 500:
-          return "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-        default:
-          return `서버 오류 (${status}): ${message}`;
-      }
-    } else if (error.request) {
-      // 요청은 보냈지만 응답을 받지 못함
-      return "서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.";
-    } else {
-      // 요청 설정 중에 에러 발생
-      return `요청 처리 중 오류가 발생했습니다: ${error.message}`;
-    }
-  }
-
-  // 🆕 14. 데이터 유효성 검증 헬퍼 함수
-  static validateCompanyCode(companyCode: string): boolean {
-    if (!companyCode || companyCode.trim().length === 0) {
-      return false;
-    }
-    
-    // 회사 코드 형식 검증 (예: 8자리 숫자)
-    const codeRegex = /^\d{8}$/;
-    return codeRegex.test(companyCode.trim());
-  }
-
-  static validateTemplateData(data: any): { isValid: boolean; missingFields: string[] } {
-    const requiredFields = [
-      'corp_code', 'company_name', 'S4_11A_1', 'S4_11A_2', 'S4_11A_3'
-    ];
-    
-    const missingFields = requiredFields.filter(field => !data[field]);
-    
-    return {
-      isValid: missingFields.length === 0,
-      missingFields
-    };
-  }
-
-  // 🆕 15. 캐싱 기능 (선택적)
-  private static cache = new Map<string, { data: any; timestamp: number }>();
-  private static CACHE_TTL = 5 * 60 * 1000; // 5분 캐시
-
-  private static getCachedData<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-    
-    if (Date.now() - cached.timestamp > this.CACHE_TTL) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return cached.data as T;
-  }
-
-  private static setCachedData(key: string, data: any): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  // 🆕 16. 캐시를 활용한 기본 데이터 조회 (옵션)
-  static async fetchBasicCompanyDataWithCache(companyCode: string, onProgress?: ProgressCallback): Promise<SecuritiesServiceResponse<BaseTemplateData>> {
-    const cacheKey = `company_${companyCode}`;
-    
-    // 캐시 확인
-    const cachedData = this.getCachedData<BaseTemplateData>(cacheKey);
-    if (cachedData) {
-      onProgress?.("💾 캐시된 데이터 사용", 100, "이전에 조회한 데이터를 사용합니다.");
-      return {
-        success: true,
-        data: cachedData
-      };
-    }
-    
-    // 캐시에 없으면 새로 조회
-    const result = await this.fetchBasicCompanyData(companyCode, onProgress);
-    
-    // 성공하면 캐시에 저장
-    if (result.success && result.data) {
-      this.setCachedData(cacheKey, result.data);
-    }
-    
-    return result;
-  }
-
-  // 🆕 17. 캐시 관리 메서드들
-  static clearCache(): void {
-    this.cache.clear();
-    console.log("🗑️ [Cache] 캐시가 클리어되었습니다.");
-  }
-
-  static getCacheInfo(): { size: number; keys: string[] } {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
-  }
 }
+
+
