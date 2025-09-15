@@ -36,23 +36,18 @@ export interface DocumentSection {
 
 export interface DocumentContentProps {
   userId: number;
-  corpCode: string | null;
-  companyName: string | null;
   htmlContent: string;
   sectionId: string;
   sectionName?: string;
   sectionType?: 'part' | 'section-1' | 'section-2';
   onSectionModified?: (sectionId: string, updatedHTML: string) => void;
   modifiedSections?: Set<string>;
-  onVersionUpdate?: () => void;
 }
 
 
 
 export type PayloadOptions = {
   user_id: number;
-  corp_code: string;
-  company_name?: string;
   version?: string;
   version_number?: number;
   description?: string;
@@ -100,7 +95,6 @@ export interface HighlightedText {
 
 
 export interface TemplateData {
-  corp_code: string;
   company_name: string;
   ceo_name: string;
   address: string;

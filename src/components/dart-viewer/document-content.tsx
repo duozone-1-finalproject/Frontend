@@ -5,20 +5,16 @@ import { Edit3, X, AlertCircle, CheckCircle, MapPin } from 'lucide-react'
 import { useDocumentContent } from '../../hooks/dart-viewer/useDocumentContent'
 import { DocumentContentProps, ValidationIssue } from '../../types/dartViewer'
 import { ValidationPanel } from './ValidationPanel'
-import GuidelinesDropdown from './GuidelinesDropdown'
 import { useState } from 'react'
 
-export function DocumentContent({
+export function DocumentContent({ 
   userId,
-  corpCode,
-  companyName,
-  htmlContent,
-  sectionId,
-  sectionName,
+  htmlContent, 
+  sectionId, 
+  sectionName, 
   sectionType,
   onSectionModified,
-  modifiedSections,
-  onVersionUpdate
+  modifiedSections
 }: DocumentContentProps) {
   const [showValidationPanel, setShowValidationPanel] = useState(false)
   const [aiProcessingIssues, setAiProcessingIssues] = useState<Set<number>>(new Set())
@@ -52,14 +48,11 @@ export function DocumentContent({
     handleAIRevision
   } = useDocumentContent({
     userId,
-    corpCode,
-    companyName,
     htmlContent,
     sectionId,
     sectionName,
     sectionType,
     onSectionModified,
-    onVersionUpdate,
   })
 
   // 검증 시작 핸들러
@@ -254,7 +247,6 @@ export function DocumentContent({
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {!isEditing && isEditable && (
             <>
-              <GuidelinesDropdown />
               <Button
                 onClick={handleEdit}
                 size="sm"
@@ -262,15 +254,15 @@ export function DocumentContent({
                 className="bg-white shadow-md hover:bg-gray-50"
               >
                 <Edit3 className="w-4 h-4 mr-1" />
-                편집
+                편집 시작
               </Button>
               <Button
                 onClick={handleValidateStart}
                 disabled={isValidating}
                 size="sm"
                 variant="outline"
-                className={`${isValidating
-                  ? 'bg-purple-500 text-white cursor-not-allowed animate-pulse'
+                className={`${isValidating 
+                  ? 'bg-purple-500 text-white cursor-not-allowed animate-pulse' 
                   : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
@@ -281,7 +273,7 @@ export function DocumentContent({
                   </div>
                 ) : '검증'}
               </Button>
-
+              
             </>
         )}
 
@@ -293,8 +285,8 @@ export function DocumentContent({
                     onClick={() => setShowValidationPanel(!showValidationPanel)}
                     size="sm"
                     variant="outline"
-                    className={`${showValidationPanel
-                      ? 'bg-orange-600 text-white hover:bg-orange-700'
+                    className={`${showValidationPanel 
+                      ? 'bg-orange-600 text-white hover:bg-orange-700' 
                       : 'bg-white shadow-md hover:bg-gray-50'
                     }`}
                   >
@@ -302,7 +294,7 @@ export function DocumentContent({
                     {showValidationPanel ? '검증창 닫기' : '검증창 보기'}
                   </Button>
                 )}
-
+                
                 <Button
                     onClick={handleImageInsert}
                     size="sm"
@@ -318,7 +310,7 @@ export function DocumentContent({
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {isSaving ? '편집 완료 중...' : '완료'}
+                    {isSaving ? '편집 완료 중...' : '편집 완료'}
                 </Button>
 
                 <Button
@@ -388,15 +380,12 @@ export function DocumentContent({
             )}
             
             {/* 단계 설명 */}
-            <div className="mt-4 text-xs text-gray-500" style={{animation: 'blink 1.5s ease-in-out infinite alternate'}}>
-              💡 최대 1분정도 소요됩니다... 잠시만 기다려주세요
+            <div className="mt-4 text-xs text-gray-500">
+              {validationStep === 1 && '문서 구조를 분석하고 있습니다...'}
+              {validationStep === 2 && '문서 내용을 추출하고 있습니다...'}
+              {validationStep === 3 && 'AI가 검증을 수행하고 있습니다...'}
+              {validationStep === 4 && '검증 결과를 처리하고 있습니다...'}
             </div>
-            <style>{`
-              @keyframes blink {
-                0% { opacity: 0.4; }
-                100% { opacity: 1; }
-              }
-            `}</style>
           </div>
         </div>
       )}

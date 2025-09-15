@@ -1,11 +1,10 @@
 // pages/MainPage.tsx - Refactored
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRequireAuth } from '../hooks/auth/useAuth';
 import { useMainPage } from '../hooks/pages/useMainPage';
 import { useMyPage } from '../hooks/pages/useMyPage';
 import { useSecuritiesGeneration } from '../hooks/dart-viewer/useSecuritiesGeneration';
-import { useCompanySelector } from '../hooks/main/useCompanySelector';
 
 // Components
 import { Header } from '../components/main/Header';
@@ -38,19 +37,6 @@ const MainPage: React.FC = () => {
     handleGoToViewer
   } = useSecuritiesGeneration();
 
-  // 회사 목록 미리 로드용
-  const { companies, isLoading: companiesLoading, loadCompanies } = useCompanySelector();
-
-  // 회사 삭제 후 목록 새로고침
-  const handleCompanyDeleted = (corpCode: string) => {
-    loadCompanies(123456); // 강제 새로고침
-  };
-
-  // 페이지 로드 시 회사 목록 미리 로드
-  useEffect(() => {
-    loadCompanies(123456);
-  }, []);
-
   // 오늘 일정 가져오기
   const today = new Date();
   const todayEvents = getEventsForDate(today);
@@ -62,13 +48,9 @@ const MainPage: React.FC = () => {
         todayEvents={todayEvents}
         showUserMenu={showUserMenu}
         userName={user?.name}
-        userId={123456}
-        companies={companies}
-        companiesLoading={companiesLoading}
         onProfileClick={handleProfileClick}
         onMyPageClick={handleMyPageClick}
         onLogoutClick={handleLogoutClick}
-        onCompanyDeleted={handleCompanyDeleted}
       />
 
       {/* Generation Progress Modal */}

@@ -8,14 +8,9 @@ import { VersionSelector } from './version-selector'
 import { useDocumentViewer } from '../../hooks/dart-viewer/useDocumentViewer'
 import { mockDocumentData } from '../../lib/dartViewerHelpers'
 
-interface DocumentViewerProps {
-  corpCode: string | null;
-  companyName: string | null;
-}
-
-export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
+export function DocumentViewer() {
   const navigate = useNavigate()
-
+  
   const {
     selectedSection,
     setSelectedSection,
@@ -33,10 +28,8 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
     handleSectionModified,
     handleCreateNewVersion,
     handleDeleteEditingVersion,
-    handleDeleteVersion,
     handleSwitchVersion,
-    handleVersionUpdate,
-  } = useDocumentViewer(123456, corpCode)
+  } = useDocumentViewer(123456)
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -52,12 +45,11 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
               <div className="h-5 w-px bg-blue-400"></div>
               <div className="flex items-center space-x-3">
                 <span className="bg-orange-500 px-2 py-1 rounded text-xs font-medium">코스닥</span>
-                <span className="font-medium">{companyName || "회사명"}</span>
+                <span className="font-medium">오픈엣지테크놀로지</span>
                 <VersionSelector
                   currentVersion={currentVersion}
                   versions={versions}
                   onVersionSelect={handleSwitchVersion}
-                  onVersionDelete={handleDeleteVersion}
                   disabled={isCreatingVersion}
                 />
               </div>
@@ -112,16 +104,8 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
         >
           {!isLeftPanelCollapsed && (
             <div className="h-full flex flex-col">
-              <div className="bg-blue-100 p-3 border-b flex items-center justify-between">
+              <div className="bg-blue-100 p-3 border-b text-center">
                 <h3 className="font-semibold text-blue-800">📋 문서 목차</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="p-1 h-6 w-6 bg-white hover:bg-gray-50"
-                  onClick={toggleLeftPanel}
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </Button>
               </div>
               <div className="flex-1 overflow-auto">
                 <TableOfContents
@@ -137,17 +121,19 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
           )}
         </div>
 
-        {/* Toggle Button - 접혔을 때만 표시 */}
-        {isLeftPanelCollapsed && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute z-10 top-1 left-2 p-1 h-6 w-6 bg-white shadow-md hover:bg-gray-50"
-            onClick={toggleLeftPanel}
-          >
-            <ChevronRight className="w-3 h-3" />
-          </Button>
-        )}
+        {/* Toggle Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className={`absolute z-10 transform -translate-y-1/2 transition-all duration-200`}
+          style={{
+            left: isLeftPanelCollapsed ? '8px' : 'calc(20% + 4px)',
+            top: '25px', 
+          }}
+          onClick={toggleLeftPanel}
+        >
+          {isLeftPanelCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </Button>
 
         {/* Right Panel */}
         <div className="flex-1 bg-white overflow-hidden">
@@ -159,14 +145,11 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
           ) : (
             <DocumentContent
               userId={123456}
-              corpCode={corpCode}
-              companyName={companyName}
               htmlContent={currentSectionHTML}
               sectionId={selectedSection}
               sectionName={currentSection?.sectionName}
               sectionType={currentSection?.type}
               onSectionModified={handleSectionModified}
-              onVersionUpdate={handleVersionUpdate}
             />
           )}
         </div>

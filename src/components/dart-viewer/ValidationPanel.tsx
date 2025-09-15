@@ -31,7 +31,7 @@ export function ValidationPanel({
   if (!isVisible || !validationResult) return null
 
   return (
-    <div className="absolute top-16 right-0 bottom-0 z-40 w-96 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
+    <div className="absolute inset-y-0 right-0 z-40 w-96 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
       <div className="h-full flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-red-50">
