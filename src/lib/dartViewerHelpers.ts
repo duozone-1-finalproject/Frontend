@@ -4,6 +4,7 @@ import prettier from "prettier/standalone";
 import parserHtml from "prettier/plugins/html";
 import { PayloadOptions } from "../types/dartViewer";
 import { TemplateData } from "../types/dartViewer";
+import { securitiesApi } from "../api/securitiesApi";
 
 export const mockDocumentData: DocumentSection[] = [
   {
@@ -501,7 +502,7 @@ const SECTION_FILES = [
   "section-6.html",
 ] as const;
 
-export async function initializeData(): Promise<Record<string, string>> {
+export async function initializeData(companyCode: string, htmlContent: string): Promise<Record<string, string>> {
   const sectionsData: Record<string, string> = {};
 
   try {
