@@ -130,6 +130,7 @@ export interface TemplateData {
   S4_NOTE1_3: string;
   S4_NOTE1_4: string;
   S4_NOTE1_5: string;
+  htmlContent : string;
 }
 
 export type AiAnnotationState = 'loading' | 'success' | 'error';
