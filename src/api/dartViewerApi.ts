@@ -1,5 +1,7 @@
 const getToken = () => localStorage.getItem("accessToken");
 
+const API_BASE_URL = "http://localhost:8080";
+
 /** 공통 헤더 생성 함수 */
 const makeHeaders = (): HeadersInit => {
   const headers: HeadersInit = { "Content-Type": "application/json" };
@@ -12,7 +14,7 @@ const makeHeaders = (): HeadersInit => {
 
 export const dartViewerApi = {
   fetchVersions: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions?userId=${userId}`, {
+    const res = await fetch(API_BASE_URL+`/api/versions?userId=${userId}`, {
       method: "GET",
       headers: makeHeaders(),
       cache: "no-store",
@@ -21,12 +23,16 @@ export const dartViewerApi = {
     if (!res.ok) {
       throw new Error("Failed to fetch versions");
     }
-
+    console.log("Fetched versions:\nFetched versions:\nFetched versions:\nFetched versions:\n", res);
     return res.json();
   },
 
+  fetchVersions2: async (userId: number): Promise<any[]> => {
+    return []
+  },
+
   createVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions', {
+    const res = await fetch(API_BASE_URL+'/api/versions', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -40,7 +46,7 @@ export const dartViewerApi = {
   },
 
   finalizeVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/finalize', {
+    const res = await fetch(API_BASE_URL+'/api/versions/finalize', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -54,7 +60,7 @@ export const dartViewerApi = {
   },
 
   updateEditingVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/editing', {
+    const res = await fetch(API_BASE_URL+'/api/versions/editing', {
       method: 'POST',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -68,7 +74,7 @@ export const dartViewerApi = {
   },
 
   patchEditingVersion: async (payload: unknown) => {
-    const res = await fetch('http://localhost:8080/api/versions/editing', {
+    const res = await fetch(API_BASE_URL+'/api/versions/editing', {
       method: 'PATCH',
       headers: makeHeaders(),
       body: JSON.stringify(payload)
@@ -82,7 +88,7 @@ export const dartViewerApi = {
   },
 
   deleteEditingVersion: async (userId: number) => {
-    const res = await fetch(`http://localhost:8080/api/versions/editing`, {
+    const res = await fetch(API_BASE_URL+`/api/versions/editing`, {
       method: 'DELETE',
       headers: makeHeaders(),
       body: JSON.stringify({
