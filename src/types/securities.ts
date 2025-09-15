@@ -235,6 +235,11 @@ export interface AINotesData {
   S4_NOTE1_3: string;
   S4_NOTE1_4: string;
   S4_NOTE1_5: string;
+  S3_NOTE1_1: string;
+  S3_NOTE1_2: string;
+  S3_NOTE1_3: string;
+  S3_NOTE1_4: string;
+  S3_NOTE1_5: string;
 }
 
 // 사업보고서 데이터
