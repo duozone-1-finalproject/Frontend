@@ -1,0 +1,205 @@
+@charset "UTF-8"; BODY {
+    margin-left: 20px;
+    width: 600px;
+    font-size: 12pt;
+    font-family: DartNBSP, "바탕", Batang;
+    word-break: break-all;
+}
+
+body {
+    margin-left: 20px;
+    width: 600px;
+    font-size: 12pt;
+    font-family: DartNBSP, "바탕", Batang;
+    word-break: break-all;
+}
+
+TABLE {
+    table-layout: fixed;
+    font-size: 11pt;
+    font-family: DartNBSP, "굴림", Gulim;
+    border-collapse: collapse;
+    border-style: solid;
+    border-color: black;
+    color: #000000;
+    margin-bottom: 6px;
+}
+
+TABLE.nb {
+    border-style: none;
+}
+
+THEAD > TR > TD {
+    font-size: 11pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "굴림", Gulim;
+    background-color: #dcdcdc;
+    border-color: gray;
+    padding: 4px 4px 2px 4px;
+}
+
+TH {
+    font-size: 11pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "굴림", Gulim;
+    font-weight: normal;
+    background-color: #dcdcdc;
+    border-color: gray;
+    padding: 4px 4px 2px 4px;
+}
+
+TD {
+    font-size: 11pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "굴림", Gulim;
+    border-color: gray;
+    padding: 4px 4px 2px 4px;
+}
+
+P {
+    font-size: 12pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    color: #000000;
+    margin: 0px;
+}
+
+BODY > P {
+    font-size: 12pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: justify;
+    color: #000000;
+    margin: 0px;
+}
+
+TH > P {
+    font-size: 11pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "굴림", Gulim;
+}
+
+TD > P {
+    font-size: 11pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "굴림", Gulim;
+}
+
+P.table-group {
+    font-size: 11pt;
+    font-family: DartNBSP, "굴림", Gulim;
+    text-align: center;
+}
+
+P.table-group-xbrl {
+    font-size: 11pt;
+    font-family: DartNBSP, "굴림", Gulim;
+    text-align: left;
+}
+
+P.img-caption {
+    font-size: 12pt;
+    font-family: DartNBSP, "굴림", Gulim;
+    text-align: center;
+    color: #324a58;
+}
+
+P.part {
+    font-size: 20pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: center;
+    color: #0000ff;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+P.section-1 {
+    font-size: 18pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: center;
+    color: #0000ff;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+P.section-2 {
+    font-size: 16pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #0000ff;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+P.section-3 {
+    font-size: 14pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #0000ff;
+}
+
+P.section-4 {
+    font-size: 14pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #0000ff;
+}
+
+P.section-5 {
+    font-size: 12pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #0000ff;
+}
+
+P.section-6 {
+    font-size: 12pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #0000ff;
+}
+
+P.cover-title {
+    font-size: 28pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: center;
+    color: #0000ff;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+P.correction {
+    font-size: 28pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: center;
+    color: #0000ff;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+P.description {
+    font-size: 12pt;
+    line-height: 1.6em;
+    font-family: DartNBSP, "바탕", Batang;
+    text-align: left;
+    color: #324a58;
+}
+
+P.pgbrk {
+    height: 24px;
+}
+
+@font-face {
+    font-family: DartNBSP;
+    src: local('Tahoma Bold');
+    unicode-range: U+00A0;
+}
