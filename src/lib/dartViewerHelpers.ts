@@ -502,22 +502,15 @@ const SECTION_FILES = [
   "section-6.html",
 ] as const;
 
-export async function initializeData(companyCode: string, htmlContent: string): Promise<Record<string, string>> {
+export async function initializeData(): Promise<Record<string, string>> {
   const sectionsData: Record<string, string> = {};
 
-  try {
-    // fetch 대신 axios 사용
-    const promises = SECTION_FILES.map(async (fileName, index) => {
-      const response = await axios.get(`/initialTemplate/${fileName}`);
-      sectionsData[`section${index + 1}`] = response.data;
-    });
-
-    await Promise.all(promises);
-    return sectionsData;
-  } catch (error) {
-    console.error('템플릿 파일 로드 실패:', error);
-    throw error;
+  for (let i = 0; i < SECTION_FILES.length; i++) {
+    const res = await fetch(`/initialTemplate/${SECTION_FILES[i]}`);
+    sectionsData[`section${i + 1}`] = await res.text();
   }
+
+  return sectionsData;
 }
 
 
@@ -557,6 +550,8 @@ export function isLeafSection(section: DocumentSection | null): boolean {
 export function createPayload(options: PayloadOptions): Record<string, unknown> {
   const {
     user_id,
+    corp_code,
+    company_name,
     version,
     version_number,
     description = "편집중인 버전",
@@ -566,10 +561,12 @@ export function createPayload(options: PayloadOptions): Record<string, unknown> 
 
   const payload: Record<string, unknown> = {
     user_id,
+    corp_code,
     description,
     createdAt,
   };
 
+  if (company_name !== undefined) payload.company_name = company_name;
   if (version !== undefined) payload.version = version;
   if (version_number !== undefined) payload.version_number = version_number;
   if (sectionsData !== undefined) payload.sectionsData = sectionsData;

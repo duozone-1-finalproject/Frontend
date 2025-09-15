@@ -77,6 +77,20 @@ export const securitiesApi = {
     }
   },
 
+  saveFinancialsData: async (corpCode: string) => {
+    try {
+      const response = await axios.post('/api/dart/financials', { "corp_code" : corpCode });
+      
+      if (response.data && response.status === 200) {
+        return response.data;
+      } else {
+        throw new Error("재무 데이터 저장 API 응답 오류");
+      }
+    } catch (error: any) {
+      throw new Error(`재무 데이터 저장 API 호출 실패: ${error.message}`);
+    }
+  },
+    
   getBizReport: async (companyCode: string): Promise<BizData> => {
     try {
       const response = await axios.get(`/api/dart/reports/latest?corp_code=${companyCode}`);

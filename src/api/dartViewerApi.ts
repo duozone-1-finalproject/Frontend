@@ -1,42 +1,21 @@
 // dartViewerApi.ts
 import axios from './axios';
 
-// 검증 API를 위한 별도 axios 인스턴스
-const validationApi = axios.create({
-  baseURL: process.env.REACT_APP_VALIDATION_API_URL || "http://localhost:8081",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
-});
-
-// 검증 API에도 토큰 인터셉터 적용
-validationApi.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// 공통 응답 인터셉터 (선택사항)
-validationApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // 공통 에러 처리 로직 필요시 여기에 추가
-    return Promise.reject(error);
-  }
-);
-
 export const dartViewerApi = {
-  fetchVersions: async (userId: number) => {
+  fetchAllCompanies: async (user_id: number) => {
     try {
-      const response = await axios.get(`/api/versions`, {
-        params: { userId }
+      const response = await axios.get('/api/versions/companies', {
+        params: { userId: user_id }
       });
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Failed to fetch companies");
+    }
+  },
+
+  fetchCompanyVersions: async (payload: { user_id: number; corp_code: string }) => {
+    try {
+      const response = await axios.post('/api/versions/search', payload);
       return response.data;
     } catch (error: any) {
       throw new Error("Failed to fetch versions");
@@ -79,13 +58,18 @@ export const dartViewerApi = {
     }
   },
 
-  deleteEditingVersion: async (userId: number) => {
+  deleteVersion: async (payload: unknown) => {
     try {
-      const response = await axios.delete('/api/versions/editing', {
-        data: {
-          user_id: userId,
-        }
-      });
+      const response = await axios.delete('/api/versions', { data: payload });
+      return response;
+    } catch (error: any) {
+      throw new Error("Fail to delete");
+    }
+  },
+
+  deleteCompany: async (payload: unknown) => {
+    try {
+      const response = await axios.delete('/api/versions/company', { data: payload });
       return response;
     } catch (error: any) {
       throw new Error("Fail to delete");
@@ -94,7 +78,7 @@ export const dartViewerApi = {
 
   validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
     try {
-      const response = await validationApi.post('/check', payload);
+      const response = await axios.post('api/validation/check', payload);
       return response.data;
     } catch (error: any) {
       throw new Error("Failed to validate section");
@@ -110,8 +94,7 @@ export const dartViewerApi = {
     severity: string 
   }) => {
     try {
-      const response = await validationApi.post('/revise', payload);
-      // 서버가 단순 텍스트를 반환하므로 data를 직접 반환
+      const response = await axios.post('api/validation/revise', payload);
       return response.data;
     } catch (error: any) {
       throw new Error("Failed to revise section");

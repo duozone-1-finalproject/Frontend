@@ -4,19 +4,26 @@ import { DBVersionData, ProjectState, VersionInfo, TemplateData } from "../types
 import { dartViewerApi } from "../api/dartViewerApi";
 
 
-export async function fetchVersionsFromDB(userId: number): Promise<DBVersionData> {
+export async function fetchVersionsFromDB(userId: number, corpCode: string): Promise<DBVersionData> {
   try {
-    const response = await dartViewerApi.fetchVersions(userId);
-    return response;
+    const payload = {
+      user_id: userId,
+      corp_code: corpCode
+    }
+    const response = await dartViewerApi.fetchCompanyVersions(payload);
+    // 새로운 응답 구조에서 versions 객체만 반환
+    return response.versions || {};
   } catch (error) {
     console.error('DB에서 버전 데이터 가져오기 오류:', error);
     throw error;
   }
 }
 
-export async function loadFullProjectState(userId: number): Promise<ProjectState & { sectionsData: Record<string, string> }> {
+export async function loadFullProjectState(userId: number, corpCode: string): Promise<ProjectState & { sectionsData: Record<string, string> }> {
   try {
-    const versionsData = await fetchVersionsFromDB(userId);
+    console.log("userId: ", userId, "corpCode: ", corpCode)
+    const versionsData = await fetchVersionsFromDB(userId, corpCode);
+    console.log("versionsData:", versionsData)
     const versionKeys = Object.keys(versionsData);
     
     if (!versionsData || versionKeys.length === 0) {
@@ -67,10 +74,11 @@ export async function loadFullProjectState(userId: number): Promise<ProjectState
   }
 }
 
-export async function createNewVersion(userId: number, description: string | undefined) {
+export async function createNewVersion(userId: number, corpCode: string, description: string | undefined) {
   try {
     const payload = createPayload({
-      user_id: userId, 
+      user_id: userId,
+      corp_code: corpCode,
       description: description || "설명 없음"
     });
     const response = await dartViewerApi.finalizeVersion(payload); 
@@ -83,9 +91,9 @@ export async function createNewVersion(userId: number, description: string | und
   }
 }
 
-export async function getVersionSections(version: string, userId: number): Promise<Record<string, string>> {
+export async function getVersionSections(version: string, userId: number, corpCode: string): Promise<Record<string, string>> {
   try {
-    const versionsData = await fetchVersionsFromDB(userId)
+    const versionsData = await fetchVersionsFromDB(userId, corpCode)
     
     if (!versionsData[version]) {
       throw new Error(`버전 ${version}을 찾을 수 없습니다.`)
@@ -109,6 +117,8 @@ export async function getVersionSections(version: string, userId: number): Promi
 
 export async function updateDocumentSection(
   userId: number,
+  corpCode: string,
+  companyName: string,
   sectionKey: string,
   editedHtml: string,
   options: {
@@ -121,12 +131,10 @@ export async function updateDocumentSection(
     let finalHtml: string | null = null;
 
     if (options.sectionType === 'part') {
-      console.log("진입완료")
       // part 전체 저장
       finalHtml = `<!DOCTYPE html>\n${editedHtml}`;
     } else {
       console.log(options.sectionType);
-      console.log("진입완료2")
       // 하위 section 병합
       finalHtml = await mergeAndFormatSection(
         options.htmlContent ?? '',
@@ -141,6 +149,8 @@ export async function updateDocumentSection(
 
     const payload = createPayload({
       user_id: userId,
+      corp_code: corpCode,
+      company_name: companyName,
       description: "편집중인 버전",
       sectionsData: { [sectionKey]: finalHtml }
     });
@@ -154,16 +164,16 @@ export async function updateDocumentSection(
   }
 }
 
-// 템플릿 데이터를 적용한 v0 버전 생성
-export async function createV0WithTemplateData(userId: number, templateData: TemplateData, companyCode: string) {
-  try {    
-    const versionsData = await fetchVersionsFromDB(userId);
+export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
+  try {
+    const companyCode = templateData.corp_code;
+    const versionsData = await fetchVersionsFromDB(userId, companyCode);
 
     if (versionsData.v0) {
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
     }
     // 기본 템플릿 데이터 로드
-    const initialSectionsData = await initializeData(companyCode, templateData.htmlContent);
+    const initialSectionsData = await initializeData();
     
     // 각 섹션에 템플릿 데이터 적용
     const filledSectionsData: Record<string, string> = {};
@@ -174,6 +184,8 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
     // v0 버전으로 DB 저장
     const payload = createPayload({
       user_id: userId,
+      corp_code: templateData.corp_code,
+      company_name: templateData.company_name,
       version: "v0",
       version_number: 0,
       description: `${templateData.company_name} 증권신고서 초기 버전`,
@@ -221,7 +233,7 @@ export async function validateSectionContent(userId: number, sectionId: string, 
     return { 
       success: true, 
       message: '검증이 완료되었습니다.',
-      validationData: response // ValidationResponse 전체 데이터
+      validationData: response.data // ValidationResponse 전체 데이터
     };
 
   } catch (error: any) {
@@ -252,7 +264,7 @@ export async function reviseSectionContent(issue: {
     return {
       success: true,
       message: 'AI 수정이 완료되었습니다.',
-      revisedText: response
+      revisedText: response.data
     };
     
   } catch (error: any) {
