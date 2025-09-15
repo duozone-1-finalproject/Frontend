@@ -166,22 +166,43 @@ export async function updateDocumentSection(
 
 export async function createV0WithTemplateData(userId: number, templateData: TemplateData) {
   try {
+    console.log('🚀 [Debug] createV0WithTemplateData 시작:', { userId, corpCode: templateData.corp_code });
+    
     const companyCode = templateData.corp_code;
+    
+    // 1. 기존 버전 확인
+    console.log('📝 [Debug] fetchVersionsFromDB 호출 중...');
     const versionsData = await fetchVersionsFromDB(userId, companyCode);
+    console.log('📝 [Debug] versionsData:', versionsData);
 
     if (versionsData.v0) {
+      console.log('⚠️ [Debug] v0 이미 존재함');
       return {success: true, message: 'v0 버전이 이미 존재합니다.'};
     }
-    // 기본 템플릿 데이터 로드
-    const initialSectionsData = await initializeData();
     
-    // 각 섹션에 템플릿 데이터 적용
+    // 2. 기본 템플릿 데이터 로드
+    console.log('📝 [Debug] initializeData 호출 중...');
+    const initialSectionsData = await initializeData();
+    console.log('📝 [Debug] initialSectionsData keys:', Object.keys(initialSectionsData));
+    
+    // 3. 각 섹션에 템플릿 데이터 적용
+    console.log('📝 [Debug] 템플릿 적용 시작...');
     const filledSectionsData: Record<string, string> = {};
+    
     for (const [sectionKey, template] of Object.entries(initialSectionsData)) {
-      filledSectionsData[sectionKey] = fillTemplate(template, templateData);
+      try {
+        console.log(`📝 [Debug] ${sectionKey} 템플릿 적용 중...`);
+        filledSectionsData[sectionKey] = fillTemplate(template, templateData);
+        console.log(`✅ [Debug] ${sectionKey} 템플릿 적용 완료`);
+      } catch (error) {
+        console.error(`❌ [Debug] ${sectionKey} 템플릿 적용 실패:`, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(`템플릿 적용 실패: ${sectionKey} - ${errorMessage}`);
+      }
     }
         
-    // v0 버전으로 DB 저장
+    // 4. Payload 생성
+    console.log('📝 [Debug] createPayload 호출 중...');
     const payload = createPayload({
       user_id: userId,
       corp_code: templateData.corp_code,
@@ -191,8 +212,12 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
       description: `${templateData.company_name} 증권신고서 초기 버전`,
       sectionsData: filledSectionsData,
     });
+    console.log('📝 [Debug] payload 생성 완료, sectionsData keys:', Object.keys(payload.sectionsData || {}));
     
+    // 5. DB 저장
+    console.log('📝 [Debug] dartViewerApi.createVersion 호출 중...');
     const result = await dartViewerApi.createVersion(payload);
+    console.log('✅ [Debug] DB 저장 완료:', result);
     
     return {
       success: true,
@@ -202,6 +227,13 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
     
   } catch (error: any) {
     console.error('❌ [Service] v0 버전 생성 실패:', error);
+    console.error('❌ [Debug] Error stack:', error.stack);
+    console.error('❌ [Debug] Error details:', {
+      name: error.name,
+      message: error.message,
+      cause: error.cause
+    });
+    
     return {
       success: false,
       message: error.message || 'v0 버전 생성 중 오류가 발생했습니다.',
@@ -209,7 +241,6 @@ export async function createV0WithTemplateData(userId: number, templateData: Tem
     };
   }
 }
-
 export async function validateSectionContent(userId: number, sectionId: string, htmlContent: string) {
   try {
     // HTML에서 텍스트만 추출
