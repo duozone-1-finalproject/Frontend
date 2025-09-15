@@ -337,7 +337,12 @@ static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback):
         S4_NOTE1_2: aiResponse.S4_NOTE1_2 || getDefaultNote(2),
         S4_NOTE1_3: aiResponse.S4_NOTE1_3 || getDefaultNote(3),
         S4_NOTE1_4: aiResponse.S4_NOTE1_4 || getDefaultNote(4),
-        S4_NOTE1_5: aiResponse.S4_NOTE1_5 || getDefaultNote(5)
+        S4_NOTE1_5: aiResponse.S4_NOTE1_5 || getDefaultNote(5),
+        S3_NOTE1_1: aiResponse.S4_NOTE1_1 || getDefaultNote(1),
+        S3_NOTE1_2: aiResponse.S4_NOTE1_2 || getDefaultNote(2),
+        S3_NOTE1_3: aiResponse.S4_NOTE1_3 || getDefaultNote(3),
+        S3_NOTE1_4: aiResponse.S4_NOTE1_4 || getDefaultNote(4),
+        S3_NOTE1_5: aiResponse.S4_NOTE1_5 || getDefaultNote(5)
       };
 
       console.log("✅ [AI Success] 주식 공모 주석 생성 완료:", generatedNotes);
@@ -355,7 +360,12 @@ static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback):
         S4_NOTE1_2: "(오류) AI 주석 생성에 실패했습니다.",
         S4_NOTE1_3: "(오류) AI 주석 생성에 실패했습니다.",
         S4_NOTE1_4: "(오류) AI 주석 생성에 실패했습니다.",
-        S4_NOTE1_5: "(오류) AI 주석 생성에 실패했습니다."
+        S4_NOTE1_5: "(오류) AI 주석 생성에 실패했습니다.",
+        S3_NOTE1_1: `(오류) AI 주석 생성에 실패했습니다: ${error.message}`,
+        S3_NOTE1_2: "(오류) AI 주석 생성에 실패했습니다.",
+        S3_NOTE1_3: "(오류) AI 주석 생성에 실패했습니다.",
+        S3_NOTE1_4: "(오류) AI 주석 생성에 실패했습니다.",
+        S3_NOTE1_5: "(오류) AI 주석 생성에 실패했습니다."
       };
 
       return {
@@ -485,7 +495,12 @@ static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback):
       S4_NOTE1_2: getDefaultNote(2),
       S4_NOTE1_3: getDefaultNote(3),
       S4_NOTE1_4: getDefaultNote(4),
-      S4_NOTE1_5: getDefaultNote(5)
+      S4_NOTE1_5: getDefaultNote(5),
+      S3_NOTE1_1: getDefaultNote(1),
+      S3_NOTE1_2: getDefaultNote(2),
+      S3_NOTE1_3: getDefaultNote(3),
+      S3_NOTE1_4: getDefaultNote(4),
+      S3_NOTE1_5: getDefaultNote(5)
     };
   }
 
