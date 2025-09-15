@@ -110,8 +110,16 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
         >
           {!isLeftPanelCollapsed && (
             <div className="h-full flex flex-col">
-              <div className="bg-blue-100 p-3 border-b text-center">
+              <div className="bg-blue-100 p-3 border-b flex items-center justify-between">
                 <h3 className="font-semibold text-blue-800">📋 문서 목차</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="p-1 h-6 w-6 bg-white hover:bg-gray-50"
+                  onClick={toggleLeftPanel}
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </Button>
               </div>
               <div className="flex-1 overflow-auto">
                 <TableOfContents
@@ -127,19 +135,17 @@ export function DocumentViewer({ corpCode, companyName }: DocumentViewerProps) {
           )}
         </div>
 
-        {/* Toggle Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className={`absolute z-10 transform -translate-y-1/2 transition-all duration-200`}
-          style={{
-            left: isLeftPanelCollapsed ? '8px' : 'calc(20% + 4px)',
-            top: '25px', 
-          }}
-          onClick={toggleLeftPanel}
-        >
-          {isLeftPanelCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </Button>
+        {/* Toggle Button - 접혔을 때만 표시 */}
+        {isLeftPanelCollapsed && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="absolute z-10 top-1 left-2 p-1 h-6 w-6 bg-white shadow-md hover:bg-gray-50"
+            onClick={toggleLeftPanel}
+          >
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+        )}
 
         {/* Right Panel */}
         <div className="flex-1 bg-white overflow-hidden">
