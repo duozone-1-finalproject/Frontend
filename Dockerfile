@@ -17,15 +17,15 @@ COPY --from=build /app/build ./build
 COPY package*.json ./
 RUN npm install --production
 
-# 간단한 Express 서버 설치
+# Express 설치
 RUN npm install express
 
-# 서버 파일 작성
+# 서버 파일 작성 (SPA fallback 수정)
 RUN echo "const express = require('express');\
 const path = require('path');\
 const app = express();\
 app.use(express.static(path.join(__dirname, 'build')));\
-app.get('/*', (req, res) => { res.sendFile(path.join(__dirname, 'build', 'index.html')); });\
+app.get(/.*/, (req, res) => { res.sendFile(path.join(__dirname, 'build', 'index.html')); });\
 const PORT = process.env.PORT || 80;\
 app.listen(PORT, () => console.log('Server running on port ' + PORT));" > server.js
 
