@@ -72,7 +72,7 @@ export const useLogin = () => {
   };
 
   const redirectToOAuth = (provider: OAuthProvider) => {
-    window.location.href = `${axios.defaults.baseURL}/oauth2/authorization/${provider}`;
+    window.location.href = `http://k8s-default-ingress-164f943143-393493025.ap-northeast-2.elb.amazonaws.com/backend/oauth2/authorization/${provider}`;
   };
 
   const handleRegisterClick = () => {
