@@ -4,7 +4,7 @@ import axios from "axios";
 const TOKEN_KEY = "accessToken";
 
 const instance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-backend-e5561f3a96-bc5919da2e57a425.elb.ap-northeast-2.amazonaws.com",
   headers: {
     "Content-Type": "application/json",
   },
