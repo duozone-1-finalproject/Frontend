@@ -13,8 +13,8 @@ FROM nginx:alpine
 # React build 복사
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Nginx 설정 복사
-COPY nginx.conf /nginx.conf
+# SPA 라우팅을 위한 nginx 설정 복사
+COPY default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
