@@ -222,7 +222,7 @@ export async function validateSectionContent(userId: number, sectionId: string, 
     console.log("cleanedText:", cleanedText)
     
     const payload = {
-      indutyName: "소매업",
+      induty_name: "소매업",
       section: "핵심투자위험", 
       draft: cleanedText
     };

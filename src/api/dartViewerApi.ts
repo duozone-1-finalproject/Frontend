@@ -76,7 +76,7 @@ export const dartViewerApi = {
     }
   },
 
-  validateSection: async (payload: { indutyName: string; section: string; draft: string }) => {
+  validateSection: async (payload: { induty_name: string; section: string; draft: string }) => {
     try {
       const response = await axios.post('api/validation/check', payload);
       return response.data;
