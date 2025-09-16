@@ -220,6 +220,26 @@ export interface RiskData {
   S3_1C_1: string;
 }
 
+export interface RiskDetailData {
+  S4_31A_1: string;
+  S4_31B_1: string;
+  S4_31C_1: string;
+  S4_31D_1: string;
+  S4_31E_1: string;
+
+  S4_32A_1: string;
+  S4_32B_1: string;
+  S4_32C_1: string;
+  S4_32D_1: string;
+  S4_32E_1: string;
+
+  S4_33A_1: string;
+  S4_33B_1: string;
+  S4_33C_1: string;
+  S4_33D_1: string;
+  S4_33E_1: string;
+}
+
 // 투자위험요소 API 응답 타입 (새로 추가)
 export interface RiskApiResponse {
   data: RiskData;
@@ -252,7 +272,7 @@ export interface BizReportResponse {
 export type BeforeAITemplateData = BaseTemplateData & RiskData;
 
 // 최종 템플릿 데이터 타입 (기본 데이터 + AI 주석 + 사업보고서)
-export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData & BizTemplateData;
+export type SecuritiesTemplateData = BaseTemplateData & RiskData & AINotesData & BizTemplateData & RiskDetailData;
 
 // 진행률 콜백 타입
 export type ProgressCallback = (step: string, progress: number, details?: string) => void;

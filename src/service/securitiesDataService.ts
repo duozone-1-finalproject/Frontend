@@ -12,7 +12,8 @@ import type {
   ProgressCallback,
   BeforeAITemplateData,
   RiskApiResponse,
-  BizData
+  BizData,
+  RiskDetailData
 } from '../types/securities';
 
 // 메인 데이터 서비스 클래스
@@ -412,7 +413,31 @@ static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback):
           onProgress?.(`📋 ${step}`, Math.max(30, progress), details);
         })
       ]);
-  
+      
+      const bizRiskList = splitTextIntoParagraphs(riskResult.data?.S3_1A_1);
+      const compRiskList =splitTextIntoParagraphs(riskResult.data?.S3_1B_1);
+      const marketRiskList =splitTextIntoParagraphs(riskResult.data?.S3_1C_1);
+
+      const processedRiskData: RiskDetailData = {
+        S4_31A_1: bizRiskList.length > 0 ? bizRiskList[0] : "1",
+        S4_31B_1: bizRiskList.length > 1 ? bizRiskList[1] : "2",
+        S4_31C_1: bizRiskList.length > 2 ? bizRiskList[2] : "3",
+        S4_31D_1: bizRiskList.length > 3 ? bizRiskList[3] : "4",
+        S4_31E_1: bizRiskList.length > 4 ? bizRiskList[4] : "5",
+
+        S4_32A_1: compRiskList.length > 0 ? compRiskList[0] : "1",
+        S4_32B_1: compRiskList.length > 1 ? compRiskList[1] : "2",
+        S4_32C_1: compRiskList.length > 2 ? compRiskList[2] : "3",
+        S4_32D_1: compRiskList.length > 3 ? compRiskList[3] : "4",
+        S4_32E_1: compRiskList.length > 4 ? compRiskList[4] : "5",
+
+        S4_33A_1: marketRiskList.length > 0 ? marketRiskList[0] : "1",
+        S4_33B_1: marketRiskList.length > 1 ? marketRiskList[1] : "2",
+        S4_33C_1: marketRiskList.length > 2 ? marketRiskList[2] : "3",
+        S4_33D_1: marketRiskList.length > 3 ? marketRiskList[3] : "4",
+        S4_33E_1: marketRiskList.length > 4 ? marketRiskList[4] : "5",
+      }
+
       // Step 4: 병렬 처리 완료 (3개 결과 모두 포함)
       onProgress?.("🎯 병렬 처리 완료", 75, 
         `AI 주석: ${aiResult.success ? '성공' : '실패'} | 위험요소: ${riskResult.success ? '성공' : '실패'} | 사업보고서: ${bizResult.success ? '성공' : '실패'}`
@@ -428,7 +453,8 @@ static async fetchBizReport(companyCode: string, onProgress?: ProgressCallback):
         ...basicDataResult.data,  // 기본 회사 데이터
         ...riskResult.data!,       // 투자위험요소 데이터
         ...aiResult.data! ,        // AI 생성 주석
-        ...bizResult.data!         // 사업보고서 데이터
+        ...bizResult.data!,         // 사업보고서 데이터
+        ...processedRiskData!       // 세분화된 투자위험요소 데이터
       };
 
       
