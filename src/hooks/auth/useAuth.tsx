@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import type { UserDto, LoginCredentials, RegisterData, AuthResult, AuthState } from '../../types/auth';
-import React from 'react';
 
 export const useAuth = () => {
   const navigate = useNavigate();

@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 // pages/MainPage.tsx - Refactored
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+=======
+// pages/MainPage.tsx (리팩토링된 버전)
+import React from 'react';
+>>>>>>> eb052dd2089f839797ab6a8797eb765ea51e6129
 import { useRequireAuth } from '../hooks/auth/useAuth';
 import { useMainPage } from '../hooks/pages/useMainPage';
 import { useMyPage } from '../hooks/pages/useMyPage';
@@ -25,6 +30,7 @@ const MainPage: React.FC = () => {
     handleLogoutClick
   } = useMainPage();
 
+<<<<<<< HEAD
   const { getEventsForDate } = useMyPage();
 
   const {
@@ -41,6 +47,8 @@ const MainPage: React.FC = () => {
   const today = new Date();
   const todayEvents = getEventsForDate(today);
 
+=======
+>>>>>>> eb052dd2089f839797ab6a8797eb765ea51e6129
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}

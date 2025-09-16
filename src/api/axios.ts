@@ -4,7 +4,7 @@ import axios from "axios";
 const TOKEN_KEY = "accessToken";
 
 const instance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:8080",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://:8080",
   headers: {
     "Content-Type": "application/json",
   },
