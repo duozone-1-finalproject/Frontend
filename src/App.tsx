@@ -1,84 +1,45 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import MainPage from "./pages/MainPage";
-import RegisterPage from "./pages/RegisterPage";
-import OAuthSuccessPage from './pages/OAuthSuccessPage';
-import MyPage from "./pages/MyPage";
-import DartViewer from "./pages/DartViewer";
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
 
-// 인증 확인 함수 (토큰 체크 등)
-const isAuthenticated = (): boolean => {
-  // 여기서 실제 인증 로직 구현 (예: localStorage에서 토큰 확인)
-  const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-  return !!token;
-};
+    # 정적 파일 캐시
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|eot|ttf|svg|map)$ {
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
 
-// ProtectedRoute 컴포넌트
-interface ProtectedRouteProps {
-  children: React.ReactNode;
+    # Backend, FastAPI, AI 프록시
+    location /backend {
+        proxy_pass http://backend:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /fastapi {
+        proxy_pass http://fastapi:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /ai {
+        proxy_pass http://ai:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # SPA 라우팅
+    location / {
+        try_files $uri /index.html;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
 }
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
-// PublicRoute 컴포넌트 (로그인된 상태에서 로그인 페이지 접근 방지)
-const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  return !isAuthenticated() ? <>{children}</> : <Navigate to="/main" replace />;
-};
-
-const App: React.FC = () => {
-  return (
-    <Router>
-      <Routes>
-        {/* 루트 경로 - 인증 상태에 따라 리다이렉트 */}
-        <Route path="/" element={
-          isAuthenticated() ? <Navigate to="/main" replace /> : <Navigate to="/login" replace />
-        } />
-        
-        {/* 공개 라우트 (로그인 안된 상태에서만 접근) */}
-        <Route path="/login" element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        } />
-        
-        <Route path="/register" element={
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
-        } />
-        
-        {/* OAuth 성공 페이지는 항상 접근 가능 */}
-        <Route path="/oauth-success" element={<OAuthSuccessPage />} />
-        
-        {/* 보호된 라우트 (로그인된 상태에서만 접근) */}
-        <Route path="/main" element={
-          <ProtectedRoute>
-            <MainPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/mypage" element={
-          <ProtectedRoute>
-            <MyPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/dartviewer" element={
-          <ProtectedRoute>
-            <DartViewer />
-          </ProtectedRoute>
-        } />
-        
-        {/* 존재하지 않는 경로 */}
-        <Route path="*" element={
-          isAuthenticated() ? <Navigate to="/main" replace /> : <Navigate to="/login" replace />
-        } />
-      </Routes>
-    </Router>
-  );
-};
-
-export default App;
