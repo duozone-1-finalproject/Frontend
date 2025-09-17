@@ -2,7 +2,7 @@ import axios from "axios";
 
 // baseURL이 비어있으면 기본값 사용 (중요!)
 const baseURL = (process.env.REACT_APP_API_BASE_URL ||
-  "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com")
+  "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend")
   .replace(/\/$/, ""); // 끝 슬래시 제거
 
 console.log("🔧 Axios baseURL:", baseURL);
