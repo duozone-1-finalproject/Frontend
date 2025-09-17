@@ -37,8 +37,11 @@ const isAWSEnvironment = () => {
 };
 
 const instance = axios.create({
-  baseURL: "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
-  headers: { "Content-Type": "application/json" },
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
+  headers: { 
+    "Content-Type": "application/json",
+    "Accept": "application/json" // JSON 응답 요청
+  },
   withCredentials: true,
   timeout: isAWSEnvironment() ? 30000 : 10000,
 });
@@ -48,7 +51,7 @@ instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(TOKEN_KEY);
     
-    // 🔥 토큰이 있고 유효한 경우에만 헤더에 추가
+    // 토큰이 있고 유효한 경우에만 헤더에 추가
     if (token && config.headers) {
       if (isValidJWT(token)) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -61,18 +64,23 @@ instance.interceptors.request.use(
       }
     }
     
+    // 모든 요청에 JSON 헤더 확실히 설정
+    config.headers['Accept'] = 'application/json';
+    config.headers['Content-Type'] = 'application/json';
+    
     // AWS ELB를 위한 추가 헤더
     if (isAWSEnvironment()) {
       config.headers['X-Requested-With'] = 'XMLHttpRequest';
-      config.headers['Access-Control-Request-Headers'] = 'Authorization,Content-Type';
     }
     
-    // 🔍 디버깅 정보
+    // 디버깅 정보
     console.log("🚀 Request Config:", {
       url: config.url,
       method: config.method,
       hasAuth: !!config.headers.Authorization,
-      withCredentials: config.withCredentials
+      withCredentials: config.withCredentials,
+      accept: config.headers.Accept,
+      contentType: config.headers['Content-Type']
     });
     
     return config;
@@ -89,9 +97,27 @@ instance.interceptors.response.use(
     console.log("✅ Response:", {
       url: response.config.url,
       status: response.status,
+      contentType: response.headers['content-type'],
+      dataType: typeof response.data
     });
     
-    // 새로운 토큰이 있으면 검증 후 저장
+    // HTML 응답이 오는 경우 경고
+    if (typeof response.data === 'string' && response.data.includes('<html>')) {
+      console.warn("🚨 HTML 응답 받음 - 예상: JSON", response.data.substring(0, 100));
+    }
+    
+    // 로그인 응답에서 토큰 추출
+    if (response.config.url?.includes('/auth/login') && response.data?.accessToken) {
+      const token = response.data.accessToken;
+      if (isValidJWT(token)) {
+        localStorage.setItem(TOKEN_KEY, token);
+        console.log("🔄 로그인 토큰 저장됨:", `${token.substring(0, 20)}...`);
+      } else {
+        console.warn("🚨 로그인에서 받은 토큰이 유효하지 않음:", token);
+      }
+    }
+    
+    // 응답 헤더에서 새로운 토큰 확인
     const newToken = response.headers['authorization'] || response.headers['Authorization'];
     if (newToken && newToken.startsWith('Bearer ')) {
       const tokenValue = newToken.substring(7);
@@ -110,7 +136,9 @@ instance.interceptors.response.use(
     console.error("❌ Response Error:", {
       url: error.config?.url,
       status: error.response?.status,
+      statusText: error.response?.statusText,
       message: error.message,
+      responseData: error.response?.data
     });
     
     // 401 에러 처리
@@ -118,6 +146,7 @@ instance.interceptors.response.use(
       console.log("🔓 401 Unauthorized - clearing token");
       localStorage.removeItem(TOKEN_KEY);
       
+      // AWS 환경에서는 자동 리다이렉트 안함
       if (!isAWSEnvironment()) {
         window.location.href = '/login';
       }

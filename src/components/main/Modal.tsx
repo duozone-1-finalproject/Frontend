@@ -2,9 +2,34 @@ import axiosInstance from '../../api/axios';
 import React, { useState, useEffect, ReactNode } from 'react';
 import { X, Search } from 'lucide-react';
 
+// 공통 응답 검증 함수
+const validateJsonResponse = (response: any, apiName: string) => {
+  // HTML 응답 체크 - 더 엄격하게
+  if (typeof response.data === 'string' && (
+    response.data.includes('<html>') || 
+    response.data.includes('<!DOCTYPE') ||
+    response.data.includes('<form') ||
+    response.data.includes('login')
+  )) {
+    console.error(`🚨 ${apiName}: HTML 응답 받음 - 예상: JSON`);
+    throw new Error(`${apiName}: 서버에서 HTML 응답을 받았습니다. API 엔드포인트를 확인하세요.`);
+  }
+  
+  // 상태 코드 체크
+  if (response.status !== 200) {
+    throw new Error(`${apiName}: HTTP ${response.status} 오류`);
+  }
+  
+  // 데이터 존재 체크
+  if (!response.data) {
+    throw new Error(`${apiName}: 응답 데이터가 없습니다`);
+  }
+  
+  console.log(`✅ ${apiName}: 유효한 JSON 응답 확인됨`);
+};
+
 // =========================================================================
 // 1. 범용 UI 컴포넌트: Modal (Presentational)
-// 역할: 검은 배경과 모달의 '틀'을 제공하고, children으로 받은 내용을 보여줌
 // =========================================================================
 interface ModalProps {
   isOpen: boolean;
@@ -14,7 +39,6 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-  // Escape 키로 닫기, 외부 스크롤 방지 로직은 그대로 유지
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -35,24 +59,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* 배경 오버레이 */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
-      {/* 모달 창 */}
       <div
         className="relative bg-white rounded-lg shadow-xl flex flex-col"
         style={{ width: '500px', height: '600px' }}
       >
-        {/* 헤더 */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
             <X size={20} className="text-gray-500" />
           </button>
         </div>
-        {/* 컨텐츠 (children) */}
         <div className="flex-grow overflow-y-auto">
           {children}
         </div>
@@ -63,10 +83,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
 // =========================================================================
 // 2. 범용 UI 컴포넌트: CompanyList (Presentational)
-// 역할: 기업 데이터 배열을 받아 UI 목록으로 렌더링
 // =========================================================================
-
-// --- 데이터 타입을 위한 Interface 정의 ---
 interface Company {
   corpCode: string;
   corpName: string;
@@ -86,7 +103,6 @@ const CompanyList: React.FC<CompanyListProps> = ({
   error 
 }) => {
   const handleSelectCompany = (company: Company) => {
-    // window.confirm이 true(예)를 반환하면 onSelectCompany 함수 실행
     if (window.confirm(`'${company.corpName}'을(를) 선택하시겠습니까?`)) {
       onSelectCompany(company.corpCode, company.corpName);
     }
@@ -139,7 +155,6 @@ const CompanyList: React.FC<CompanyListProps> = ({
 
 // =========================================================================
 // 3. 기능 특화 컴포넌트: CompanySearchModal (Container)
-// 역할: 상태 관리, API 호출 등 '기업 검색'에 필요한 모든 로직을 담당
 // =========================================================================
 interface CompanySearchModalProps {
   isOpen: boolean;
@@ -152,13 +167,11 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
   onClose, 
   onSelectCompany 
 }) => {
-  // 상태 관리: 검색어, 기업 목록, 로딩 상태, 에러
   const [searchTerm, setSearchTerm] = useState('');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // 모달이 열릴 때마다 상태 초기화
   useEffect(() => {
     if (isOpen) {
       setSearchTerm('');
@@ -167,9 +180,8 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
     }
   }, [isOpen]);
 
-  // API 호출 로직 (Debounce 적용)
+  // API 호출 로직 (강화된 검증 포함)
   useEffect(() => {
-    // 검색어가 없거나 너무 짧으면 API 호출 방지
     if (!searchTerm || searchTerm.trim().length < 2) {
       setCompanies([]);
       setError('');
@@ -183,69 +195,75 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
       try {
         console.log('🔍 기업 검색 API 호출:', searchTerm);
         
-        // 🔧 실제 API 엔드포인트로 수정 필요
-        // 옵션 1: 다른 엔드포인트 시도
-        // const response = await axiosInstance.get('/api/company/search', {
-        // 옵션 2: 다른 경로 시도  
-        // const response = await axiosInstance.get('/companies/search', {
-        // 옵션 3: DART API 직접 호출 (CORS 문제 가능)
-        // const response = await axiosInstance.get('/dart/companies', {
-        
         const response = await axiosInstance.get('/api/companies/search', {
           params: { 
             keyword: searchTerm.trim(),
-            limit: 50  // 검색 결과 제한
+            limit: 50
           }
         });
         
-        console.log('📡 API 응답:', response.data);
-        console.log('📡 응답 타입:', typeof response.data);
-        console.log('📡 응답 상태:', response.status);
+        console.log('📡 API 응답:', {
+          status: response.status,
+          contentType: response.headers['content-type'],
+          dataType: typeof response.data,
+          dataKeys: typeof response.data === 'object' ? Object.keys(response.data) : 'N/A'
+        });
         
-        // 🚨 HTML 응답 체크 (로그인 페이지 등)
-        if (typeof response.data === 'string' && response.data.includes('<form') && response.data.includes('login')) {
-          throw new Error('API 엔드포인트가 존재하지 않거나 인증이 필요합니다. 백엔드 개발자에게 문의하세요.');
-        }
+        // 강화된 응답 검증
+        validateJsonResponse(response, 'CompanySearch');
         
         // API 응답 구조에 따라 데이터 추출
         let companyData: Company[] = [];
         
         if (response.data) {
-          // 백엔드 CompanyOverviewListResponseDto 구조 처리
+          // 가능한 모든 응답 구조 처리
           if (response.data.companyOverviews && Array.isArray(response.data.companyOverviews)) {
-            // CompanyOverview 엔티티를 Company 인터페이스에 맞게 매핑
             companyData = response.data.companyOverviews.map((company: any) => ({
               corpCode: company.corpCode || '',
               corpName: company.corpName || ''
             }));
           }
-          // 직접 배열인 경우 (test 엔드포인트 등)
           else if (Array.isArray(response.data)) {
             companyData = response.data.map((company: any) => ({
               corpCode: company.corpCode || '',
               corpName: company.corpName || ''
             }));
           }
-          // 다른 가능한 구조들
           else if (response.data.companies && Array.isArray(response.data.companies)) {
-            companyData = response.data.companies;
+            companyData = response.data.companies.map((company: any) => ({
+              corpCode: company.corpCode || '',
+              corpName: company.corpName || ''
+            }));
           }
           else if (response.data.content && Array.isArray(response.data.content)) {
-            companyData = response.data.content;
+            companyData = response.data.content.map((company: any) => ({
+              corpCode: company.corpCode || '',
+              corpName: company.corpName || ''
+            }));
           }
           else if (response.data.data && Array.isArray(response.data.data)) {
-            companyData = response.data.data;
+            companyData = response.data.data.map((company: any) => ({
+              corpCode: company.corpCode || '',
+              corpName: company.corpName || ''
+            }));
           }
-          // 예상치 못한 응답 구조
           else {
             console.warn('예상치 못한 API 응답 구조:', response.data);
-            throw new Error('API 응답 형식이 올바르지 않습니다.');
+            console.warn('응답 구조 분석:', {
+              isObject: typeof response.data === 'object',
+              isArray: Array.isArray(response.data),
+              keys: Object.keys(response.data),
+              hasCompanies: 'companies' in response.data,
+              hasContent: 'content' in response.data,
+              hasData: 'data' in response.data
+            });
+            throw new Error('API 응답 형식이 올바르지 않습니다. 개발자에게 문의하세요.');
           }
         } else {
           throw new Error('API 응답이 비어있습니다.');
         }
         
-        console.log('✅ 처리된 기업 데이터:', companyData);
+        console.log('✅ 처리된 기업 데이터:', companyData.length, '개');
         setCompanies(companyData);
         
         if (companyData.length === 0) {
@@ -257,7 +275,11 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
         
         let errorMessage = '검색 중 오류가 발생했습니다.';
         
-        if (error.response) {
+        // HTML 응답 에러 특별 처리
+        if (error.message && error.message.includes('HTML 응답')) {
+          errorMessage = 'API 엔드포인트가 올바르지 않습니다. 백엔드 개발자에게 문의하세요.';
+        }
+        else if (error.response) {
           const status = error.response.status;
           const message = error.response.data?.message || error.response.statusText;
           
@@ -268,11 +290,14 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
             case 401:
               errorMessage = '인증이 필요합니다. 로그인 후 다시 시도해주세요.';
               break;
+            case 403:
+              errorMessage = '접근 권한이 없습니다.';
+              break;
             case 404:
-              errorMessage = 'API 엔드포인트를 찾을 수 없습니다.';
+              errorMessage = 'API 엔드포인트를 찾을 수 없습니다. (/api/companies/search 확인 필요)';
               break;
             case 500:
-              errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+              errorMessage = '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
               break;
             default:
               errorMessage = `서버 오류 (${status}): ${message}`;
@@ -286,15 +311,14 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
       } finally {
         setIsLoading(false);
       }
-    }, 500); // 500ms 지연
+    }, 500);
   
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // 회사 선택 처리 (모달 닫기 포함)
   const handleSelectCompany = (corpCode: string, corpName: string) => {
     onSelectCompany(corpCode, corpName);
-    onClose(); // 🎯 모달 닫기
+    onClose();
   };
 
   return (
@@ -304,7 +328,6 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
       title="기업 선택"
     >
       <>
-        {/* 검색창 UI */}
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
             <input
@@ -320,7 +343,6 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
             />
           </div>
-          {/* 검색 상태 표시 */}
           <div className="mt-2 text-sm text-gray-500">
             {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && (
               <span className="text-orange-600">최소 2글자 이상 입력해주세요.</span>
@@ -331,7 +353,6 @@ export const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
           </div>
         </div>
 
-        {/* 검색 결과 목록 UI */}
         <div className="p-4">
           <CompanyList 
             companies={companies} 
