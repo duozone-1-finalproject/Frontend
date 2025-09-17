@@ -37,10 +37,8 @@ const isAWSEnvironment = () => {
 };
 
 const instance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-backend-e5561f3a96-bc5919da2e57a425.elb.ap-northeast-2.amazonaws.com",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
   timeout: isAWSEnvironment() ? 30000 : 10000,
 });
