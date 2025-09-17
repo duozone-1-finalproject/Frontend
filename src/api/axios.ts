@@ -3,7 +3,7 @@ import axios from "axios";
 const TOKEN_KEY = "accessToken";
 
 const instance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost/backend",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
