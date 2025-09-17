@@ -1,40 +1,7 @@
-// src/api/axios.ts - 토큰 검증 강화 버전
 import axios from "axios";
 
-const TOKEN_KEY = "accessToken";
-
-// JWT 토큰 형식 검증 함수
-const isValidJWT = (token: string): boolean => {
-  if (!token) return false;
-  
-  // JWT는 3개 부분으로 구성되어야 함 (header.payload.signature)
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    console.warn("🚨 Invalid JWT format: expected 3 parts, got", parts.length);
-    return false;
-  }
-  
-  // 각 부분이 base64 형태인지 간단히 체크
-  try {
-    parts.forEach(part => {
-      if (!part || part.length === 0) {
-        throw new Error("Empty JWT part");
-      }
-    });
-    return true;
-  } catch (error) {
-    console.warn("🚨 Invalid JWT structure:", error);
-    return false;
-  }
-};
-
-// AWS 환경 감지
-const isAWSEnvironment = () => {
-  const baseURL = process.env.REACT_APP_API_BASE_URL;
-  const isAWS = baseURL?.includes('amazonaws.com') || baseURL?.includes('elb.');
-  console.log("🌍 환경 감지:", { baseURL, isAWS });
-  return isAWS;
-};
+const BASE_URL = process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, "")
+                 || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend";
 
 const instance = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
