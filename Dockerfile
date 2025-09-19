@@ -10,10 +10,6 @@ RUN npm install
 # 소스 및 환경 변수 파일 복사
 COPY . .
 
-# production 환경 변수 파일이 있으면 빌드에 자동 반영됨
-# (예: REACT_APP_API_BASE_URL 등)
-COPY .env.production .env.production
-
 RUN npm run build
 
 # Stage 2: Nginx
