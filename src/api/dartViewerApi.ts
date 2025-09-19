@@ -2,7 +2,7 @@ import axios from './axios';
 
 // 검증 API를 위한 별도 axios 인스턴스
 const validationApi = axios.create({
-  baseURL: process.env.REACT_APP_AI_URL || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/ai",
+  baseURL: process.env.REACT_APP_AI_URL || "http://k8s-default-ingress-164f943143-1716141576.ap-northeast-2.elb.amazonaws.com/ai",
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json", // JSON 응답 요청

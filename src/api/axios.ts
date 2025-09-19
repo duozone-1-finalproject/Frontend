@@ -37,7 +37,7 @@ const isAWSEnvironment = () => {
 };
 
 const instance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-ingress-164f943143-1841556789.ap-northeast-2.elb.amazonaws.com/backend",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://k8s-default-ingress-164f943143-1716141576.ap-northeast-2.elb.amazonaws.com/backend",
   headers: { 
     "Content-Type": "application/json",
     "Accept": "application/json" // JSON 응답 요청
